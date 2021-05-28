@@ -154,8 +154,8 @@ class TianHeWorker:
 
     @retry(max_retry=5, inter_time=5)
     def yhq(self):
-        #ok, _ = get_output(f"yhqueue | grep {self.partition} > {TEMP_FILE}")
-        #if ok != 0:
+        # ok, _ = get_output(f"yhqueue | grep {self.partition} > {TEMP_FILE}")
+        # if ok != 0:
         #    return ok, None
         ok, yhq_data = self._yhq_parser(TEMP_FILE)
         # TEMP_FILE.rm_file()
@@ -165,8 +165,8 @@ class TianHeWorker:
 
     @retry(max_retry=5, inter_time=5)
     def yhi(self):
-        #ok, _ = get_output(f"yhinfo -s | grep {self.partition} > {TEMP_FILE}")
-        #if ok != 0:
+        # ok, _ = get_output(f"yhinfo -s | grep {self.partition} > {TEMP_FILE}")
+        # if ok != 0:
         #    return ok, None
         ok, yhi_data = self._yhi_parser(TEMP_FILE)
         # TEMP_FILE.rm_file()
@@ -189,9 +189,8 @@ class TianHeWorker:
 
 
 class TianHeNodes:
-    def __init__(self, job_id, cn_list):
+    def __init__(self, job_id):
         self.job_id = job_id
-        self.cn_list = cn_list
 
     @staticmethod
     def _string_parser(cn_string):
@@ -213,10 +212,14 @@ class TianHeNodes:
     def running_job_log(self):
         return RUNNING_JOB_LOG
 
-    @classmethod
-    def from_log(cls, log: LogCsv):
-        pass
+    def get_cn_from_log(self):
+        log = self.running_job_log.eval()
 
+        job = log[log["JOBID"] == self.job_id]
+
+        #job_cn = job["NODELIST(REASON)"]
+
+        #return self._string_parser(job_cn.values.item())
 
 if __name__ == "__main__":
     pass

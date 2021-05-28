@@ -8,5 +8,5 @@ if __name__ == '__main__':
     from hpc import yhurm
     from utils.tools import LogCsv
 
-    v = yhurm.TianHeWorker().flush()
+    v = yhurm.TianHeNodes(job_id=123).get_cn_from_log()
     print(v)
