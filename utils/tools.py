@@ -55,34 +55,43 @@ class LogCsv:
         return new_data.to_csv(self.csv, **kwargs)
 
     @staticmethod
-    def _update(tmp_dat, org_lb, org_val, new_val):
-        tmp_dat.loc[tmp_dat[org_lb] == org_val] = new_val
+    def _update(tmp_dat, org_lb, org_val, new_label=None, new_val=None):
+        if new_label is None:
+            tmp_dat.loc[tmp_dat[org_lb] == org_val] = new_val
+        else:
+            # 找到对应的行，并修改对应行中的数据
+            pass
+
         return tmp_dat
 
-    def update_one(self, label, value, new_value):
+    def update_one(self, label, value, new_value, **kwargs):
         tmp = self.data.copy()
         tmp = self._update(tmp, label, value, new_value)
-        self.apply(tmp)
+        self.apply(tmp, **kwargs)
 
-    def update_many(self, labels: list, values: list, new_values: list):
+    def update_many(self, labels: list, values: list, new_values: list, **kwargs):
         tmp = self.data.copy()
         for idx, lb in enumerate(labels):
             try:
                 tmp = self._update(tmp, lb, values[idx], new_values[idx])
             except:
                 continue
-        self.apply(tmp)
+        self.apply(tmp, **kwargs)
 
-    def drop_one(self, label, value):
+    def drop_one(self, label, value, **kwargs):
         tmp = self.data.copy()
         row_list = tmp[tmp[label] == value].index.tolist()
-        tmp.drop(row_list, inplace=True)
+        tmp.drop(row_list, inplace=True, **kwargs)
         self.apply(tmp)
 
-    def insert_one(self, data: pandas.DataFrame):
+    def insert_one(self, data: pandas.DataFrame, **kwargs):
         tmp = self.data.copy()
         tmp = tmp.append(data, ignore_index=True)
-        self.apply(tmp)
+        self.apply(tmp, **kwargs)
+
+    def is_contain(self, label, val):
+        tmp = self.data.copy()
+        return bool(tmp[tmp[label] == val].index.tolist())
 
 
 if __name__ == '__main__':

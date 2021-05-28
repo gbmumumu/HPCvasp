@@ -10,5 +10,3 @@ if __name__ == '__main__':
 
     v = yhurm.TianHeJob().yhcontrol_show_job()
     print(v)
-    print(bool(1))
-    print(bool(0))

@@ -1,4 +1,4 @@
-JobId=17104350 Name=heeh_RRRG.sh
+JobId=12341 Name=heeh_RRRG.sh
    UserId=nscc-gz_material_1(8970) GroupId=nscc-gz_material(9578)
    Priority=1999 Account=nscc-gz_material QOS=normal WCKey=**
    JobState=RUNNING Reason=None Dependency=(null)

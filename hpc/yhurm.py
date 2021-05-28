@@ -64,6 +64,8 @@ class TianHeJob:
                         control.update({"NODELIST(REASON)": val})
                     if "RunTime".upper() == key:
                         control.update({"TIME": val})
+                    if "JobState".upper() == key:
+                        control.update({"ST": val})
         return 0, control
 
     @retry(max_retry=5, inter_time=5)
@@ -82,11 +84,21 @@ class TianHeJob:
 
     @retry(max_retry=5, inter_time=5)
     def yhcontrol_show_job(self):
-        ok, output = get_output(f"yhcontrol show job {self.id}")
-        if ok != 0:
-            return ok, None
-        # output = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhcontrol.txt").read_text()
-        return self._yhcontrol_parser(output)
+        #ok, output = get_output(f"yhcontrol show job {self.id}")
+        #if ok != 0:
+        #    return ok, None
+        output = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhcontrol.txt").read_text()
+        ok, update_data = self._yhcontrol_parser(output)
+        if not self.job_log.is_contain("JOBID", update_data["JOBID"]):
+            tmp = {}
+            for k, v in update_data.items():
+                tmp[k] = [v]
+            new_data = pandas.DataFrame.from_dict(tmp)
+            del tmp
+            self.job_log.insert_one(new_data, index=False)
+        else:
+            for k, v in update_data.items():
+                self.job_log.update_one("JOBID")
 
 
 class TianHeWorker:
