@@ -18,13 +18,13 @@ def retry(max_retry=None, inter_time=None):
         def inner(*args, **kwargs):
             exit_code, results = func(*args, **kwargs)
             number = 0
-            if not exit_code:
+            if exit_code != 0:
                 while number < max_retry:
                     sleep(inter_time)
                     number += 1
                     print(f'{number} times')
                     exit_code, results = func(*args, **kwargs)
-                    if exit_code:
+                    if exit_code == 0:
                         break
             return results
 

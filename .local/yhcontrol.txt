@@ -1,0 +1,19 @@
+JobId=17104350 Name=heeh_RRRG.sh
+   UserId=nscc-gz_material_1(8970) GroupId=nscc-gz_material(9578)
+   Priority=1999 Account=nscc-gz_material QOS=normal WCKey=**
+   JobState=RUNNING Reason=None Dependency=(null)
+   Requeue=0 Restarts=0 BatchFlag=1 ExitCode=0:0
+   RunTime=10-16:34:30 TimeLimit=UNLIMITED TimeMin=N/A
+   SubmitTime=2021-05-17T17:00:14 EligibleTime=2021-05-17T17:00:14
+   StartTime=2021-05-17T17:00:16 EndTime=Unknown
+   PreemptTime=None SuspendTime=None SecsPreSuspend=0
+   Partition=work AllocNode:Sid=ln1:13038
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=cn10572
+   BatchHost=cn10572
+   NumNodes=1 NumCPUs=24 CPUs/Task=1 ReqS:C:T=*:*:*
+   MinCPUsNode=1 MinMemoryNode=0 MinTmpDiskNode=0
+   Features=(null) Gres=(null) Reservation=(null)
+   Shared=0 Contiguous=0 Licenses=(null) Network=(null)
+   Command=/WORK/nscc-gz_material_1/rosetta/11-denovo_HEEH_RRRG/./heeh_RRRG.sh 14 heeh_3
+   WorkDir=/WORK/nscc-gz_material_1/rosetta/11-denovo_HEEH_RRRG

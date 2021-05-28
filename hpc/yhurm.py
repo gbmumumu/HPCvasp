@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
-import pandas
-
+import re
 from monty import os
+import pandas
 
 from utils.spath import SPath
 from utils.tools import retry, get_output, LogCsv
@@ -19,18 +18,18 @@ class THCommandFailed(Exception):
 
 class TianHeJob:
     def __init__(self, job_id=None, job_path=None, job_stat=None,
-                 node=1, core=24, partition="work", script_filename=None):
+                 node=1, core=24, partition="work", name=None):
         self.id = job_id
         self.path = job_path
         self.stat = job_stat
         self.node = node
         self.core = core
         self.partition = partition
-        self.sfn = script_filename
+        self.name = name
 
     @property
     def job_log(self):
-        return LogCsv(SPath(TH_LOCAL/"job.csv"))
+        return LogCsv(SPath(TH_LOCAL / "job.csv"))
 
     @retry(max_retry=5, inter_time=5)
     def yhcancel(self):
@@ -51,12 +50,14 @@ class TianHeJob:
 
     @staticmethod
     def _yhcontrol_parser(output):
-        pass
+        regex = re.compile(r"\s*(.*?)=(.*?)\s+?")
+        return 0, dict(regex.findall(output))
 
     @retry(max_retry=5, inter_time=5)
     def yhbatch(self):
         with os.cd(self.path):
-            ok, output = get_output(f"yhbatch -p {self.partition} -N {self.node} -n {self.core} {self.sfn}")
+            ok, output = get_output(f"yhbatch -p {self.partition} "
+                                    f"-N {self.node} -n {self.core} {self.name}")
 
     @retry(max_retry=5, inter_time=5)
     def yhrun(self):
@@ -64,7 +65,11 @@ class TianHeJob:
 
     @retry(max_retry=5, inter_time=5)
     def yhcontrol_show_job(self):
-        pass
+        ok, output = get_output(f"yhcontrol show job {self.id}")
+        if ok != 0:
+            return ok, None
+        # output = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhcontrol.txt").read_text()
+        return self._yhcontrol_parser(output)
 
 
 class TianHeWorker:
@@ -77,8 +82,8 @@ class TianHeWorker:
         if not log.is_empty():
             dat = pandas.read_table(log, sep=r"\s+")
             dat.to_csv(log)
-            return 1,
-        return 0,
+            return 0,
+        return 1,
 
     @staticmethod
     def _yhi_parser():
@@ -92,7 +97,7 @@ class TianHeWorker:
     def yhq(self):
         ok, _ = get_output(f"yhqueue | grep {self.partition} > {self.yhq_log}")
 
-        if not ok:
+        if ok != 0:
             raise THCommandFailed
 
         return self._yhq_parser(self.yhq_log)
@@ -100,7 +105,7 @@ class TianHeWorker:
     @retry(max_retry=5, inter_time=5)
     def yhi(self):
         ok, _ = get_output(f"yhinfo -s | grep {self.partition}")
-        if not ok:
+        if ok != 0:
             raise THCommandFailed
 
         return self._yhi_parser()
