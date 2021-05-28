@@ -67,7 +67,7 @@ class TianHeJob:
         pass
 
 
-class TianHeSpace:
+class TianHeWorker:
     def __init__(self, partition="work", total_allowed_node=50,
                  used_node=1, idle_node=None):
         self.partition = partition

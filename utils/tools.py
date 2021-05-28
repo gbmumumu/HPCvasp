@@ -67,7 +67,10 @@ class LogCsv:
     def update_many(self, labels: list, values: list, new_values: list):
         tmp = self.data.copy()
         for idx, lb in enumerate(labels):
-            tmp = self._update(tmp, lb, values[idx], new_values[idx])
+            try:
+                tmp = self._update(tmp, lb, values[idx], new_values[idx])
+            except:
+                continue
         self.apply(tmp)
 
     def drop_one(self, label, value):
