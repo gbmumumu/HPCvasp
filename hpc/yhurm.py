@@ -5,12 +5,17 @@ import re
 from monty import os
 import pandas
 
+import logging
+
 from utils.spath import SPath
 from utils.tools import retry, get_output, LogCsv
 
 TH_LOCAL = SPath(r"./.local").absolute()
 TH_LOCAL.mkdir(exist_ok=True)
-JOB_HEAD = "JOBID,PARTITION,NAME,USER,ST,TIME,NODE,NODELIST(REASON),WORKDIR".split(',')
+CSV_HEAD = "JOBID,PARTITION,NAME,USER,ST,TIME,NODE,NODELIST(REASON),WORKDIR".split(',')
+RUNNING_JOB_LOG = LogCsv(SPath(TH_LOCAL / "running_job.csv"))
+HPC_LOG = LogCsv(SPath(TH_LOCAL / "hpc.log"))
+TEMP_FILE = SPath(TH_LOCAL / "tmp.txt")
 
 
 class THCommandFailed(Exception):
@@ -29,15 +34,15 @@ class TianHeJob:
         self.name = name
 
     @property
-    def job_log(self):
-        return LogCsv(SPath(TH_LOCAL / "job.csv"))
+    def running_log(self):
+        return RUNNING_JOB_LOG
 
     @retry(max_retry=5, inter_time=5)
     def yhcancel(self):
         ok, _ = get_output(f"yhcancel {self.id}")
         if ok != 0:
             return ok, None
-        self.job_log.drop_one(label="JOBID", value=self.id)
+        self.running_log.drop_one(label="JOBID", value=self.id)
         return 0, None
 
     @staticmethod
@@ -50,7 +55,7 @@ class TianHeJob:
     def _yhcontrol_parser(output):
         regex = re.compile(r"\s*(.*?)=(.*?)\s+?")
         control = {}
-        for keyword in JOB_HEAD:
+        for keyword in CSV_HEAD:
             for key, val in regex.findall(output):
                 key = key.upper()
                 if keyword == key:
@@ -80,26 +85,26 @@ class TianHeJob:
 
     @retry(max_retry=5, inter_time=5)
     def yhrun(self):
-        raise NotImplementedError
+        pass
 
     @retry(max_retry=5, inter_time=5)
     def yhcontrol_show_job(self):
-        #ok, output = get_output(f"yhcontrol show job {self.id}")
-        #if ok != 0:
-        #    return ok, None
-        output = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhcontrol.txt").read_text()
-        ok, update_data = self._yhcontrol_parser(output)
+        ok, output = get_output(f"yhcontrol show job {self.id}")
+        if ok != 0:
+            return ok, None
+        # output = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhcontrol.txt").read_text()
+        _, update_data = self._yhcontrol_parser(output)
         job_id = update_data["JOBID"]
         try:
-            if not self.job_log.is_contain("JOBID", job_id):
+            if not self.running_log.is_contain("JOBID", job_id):
                 tmp = {}
                 for k, v in update_data.items():
                     tmp[k] = [v]
                 new_data = pandas.DataFrame.from_dict(tmp)
                 del tmp
-                self.job_log.insert_one(new_data, index=False)
+                self.running_log.insert_one(new_data, index=False)
             else:
-                self.job_log.update_many("JOBID", job_id, update_data, index=False)
+                self.running_log.update_many("JOBID", job_id, update_data, index=False)
         except:
             return 1, None
         else:
@@ -110,39 +115,57 @@ class TianHeWorker:
     def __init__(self, partition="work", total_allowed_node=50,
                  used_node=1, idle_node=None):
         self.partition = partition
+        self.total = total_allowed_node
+        self.used = used_node
+        self.idle = idle_node
+
+    @property
+    def hpc_log(self):
+        return HPC_LOG
+
+    @property
+    def running_log(self):
+        return RUNNING_JOB_LOG
+
+    @staticmethod
+    def _yhi_parser(log: SPath):
+        if not log.is_empty():
+            dat = pandas.read_table(log, sep=r"\s+")
+            return 0, dat
+        return 1, None
 
     @staticmethod
     def _yhq_parser(log: SPath):
+        # log = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhq.txt")
         if not log.is_empty():
             dat = pandas.read_table(log, sep=r"\s+")
-            dat.to_csv(log)
-            return 0,
-        return 1,
-
-    @staticmethod
-    def _yhi_parser():
-        pass
-
-    @property
-    def yhq_log(self):
-        return SPath(f"{TH_LOCAL}/yhq.txt")
+            dat["WORKDIR"] = None
+            return 0, dat
+        return 1, None
 
     @retry(max_retry=5, inter_time=5)
     def yhq(self):
-        ok, _ = get_output(f"yhqueue | grep {self.partition} > {self.yhq_log}")
-
+        ok, _ = get_output(f"yhqueue | grep {self.partition} > {TEMP_FILE}")
         if ok != 0:
-            raise THCommandFailed
-
-        return self._yhq_parser(self.yhq_log)
+            return ok, None
+        ok, yhq_data = self._yhq_parser(TEMP_FILE)
+        TEMP_FILE.rm_file()
+        if ok != 0:
+            return ok, None
+        try:
+            yhq_data.to_csv(str(self.running_log), index=False)
+        except:
+            return 1, None
+        else:
+            return 0, yhq_data
 
     @retry(max_retry=5, inter_time=5)
     def yhi(self):
-        ok, _ = get_output(f"yhinfo -s | grep {self.partition}")
+        ok, _ = get_output(f"yhinfo -s | grep {self.partition} > {TEMP_FILE}")
         if ok != 0:
-            raise THCommandFailed
+            return 0, None
 
-        return self._yhi_parser()
+        ok, yhi_data = self._yhi_parser()
 
 
 class TianHeCn:
