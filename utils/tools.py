@@ -46,6 +46,14 @@ def get_output(unix_cmd):
     return getstatusoutput(unix_cmd)
 
 
+def smart_fmt(string: str):
+    if string.isnumeric():
+        if '.' in string or 'e' in string or 'E' in string:
+            return float(string)
+        return int(string)
+    return string
+
+
 class LogCsv:
     def __init__(self, csv: SPath):
         self.csv = csv
