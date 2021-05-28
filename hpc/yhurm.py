@@ -34,30 +34,39 @@ class TianHeJob:
     @retry(max_retry=5, inter_time=5)
     def yhcancel(self):
         ok, _ = get_output(f"yhcancel {self.id}")
-        if ok:
-            self.job_log.drop_one(label="JOBID", value=self.id)
-            return True
-
-        return False
+        if ok != 0:
+            return ok, None
+        self.job_log.drop_one(label="JOBID", value=self.id)
+        return 0, None
 
     @staticmethod
     def _yhcancel_parser(output):
         pass
 
     @staticmethod
-    def _yhbatch_parser(output):
-        pass
+    def _yhbatch_parser(output, **kwargs):
+        job_id = output.split()[-1]
+        kwargs.update({"JobId": job_id})
+        return 0, kwargs
 
     @staticmethod
     def _yhcontrol_parser(output):
         regex = re.compile(r"\s*(.*?)=(.*?)\s+?")
-        return 0, dict(regex.findall(output))
+        control = {}
+        for i in regex.findall(output):
+            key, val = i
+            control.update({key.upper(): int(val) if val.isnumeric() else val})
+        return 0, control
 
     @retry(max_retry=5, inter_time=5)
     def yhbatch(self):
         with os.cd(self.path):
             ok, output = get_output(f"yhbatch -p {self.partition} "
                                     f"-N {self.node} -n {self.core} {self.name}")
+        if ok != 0:
+            return ok, None
+        return self._yhbatch_parser(output, **{"WORKDIR": self.path,
+                                               "NAME": self.name})
 
     @retry(max_retry=5, inter_time=5)
     def yhrun(self):
@@ -65,10 +74,10 @@ class TianHeJob:
 
     @retry(max_retry=5, inter_time=5)
     def yhcontrol_show_job(self):
-        ok, output = get_output(f"yhcontrol show job {self.id}")
-        if ok != 0:
-            return ok, None
-        # output = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhcontrol.txt").read_text()
+        #ok, output = get_output(f"yhcontrol show job {self.id}")
+        #if ok != 0:
+        #    return ok, None
+        output = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhcontrol.txt").read_text()
         return self._yhcontrol_parser(output)
 
 
