@@ -212,14 +212,14 @@ class TianHeNodes:
     def running_job_log(self):
         return RUNNING_JOB_LOG
 
-    def get_cn_from_log(self):
-        log = self.running_job_log.eval()
+    def get_cn(self):
+        if self.running_job_log.is_contain("JOBID", self.job_id):
+            job = self.running_job_log.get("JOBID", self.job_id)
 
-        job = log[log["JOBID"] == self.job_id]
+        # job_cn = job["NODELIST(REASON)"]
 
-        #job_cn = job["NODELIST(REASON)"]
+        # return self._string_parser(job_cn.values.item())
 
-        #return self._string_parser(job_cn.values.item())
 
 if __name__ == "__main__":
     pass

@@ -109,6 +109,10 @@ class LogCsv:
         tmp = self.data.copy()
         return bool(tmp[tmp[label] == val].index.tolist())
 
+    def get(self, label, val):
+        tmp = self.data.copy()
+        return tmp[tmp[label] == val]
+
 
 if __name__ == '__main__':
     pass
