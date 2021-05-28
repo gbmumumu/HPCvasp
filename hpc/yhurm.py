@@ -89,16 +89,21 @@ class TianHeJob:
         #    return ok, None
         output = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhcontrol.txt").read_text()
         ok, update_data = self._yhcontrol_parser(output)
-        if not self.job_log.is_contain("JOBID", update_data["JOBID"]):
-            tmp = {}
-            for k, v in update_data.items():
-                tmp[k] = [v]
-            new_data = pandas.DataFrame.from_dict(tmp)
-            del tmp
-            self.job_log.insert_one(new_data, index=False)
+        job_id = update_data["JOBID"]
+        try:
+            if not self.job_log.is_contain("JOBID", job_id):
+                tmp = {}
+                for k, v in update_data.items():
+                    tmp[k] = [v]
+                new_data = pandas.DataFrame.from_dict(tmp)
+                del tmp
+                self.job_log.insert_one(new_data, index=False)
+            else:
+                self.job_log.update_many("JOBID", job_id, update_data, index=False)
+        except:
+            return 1, None
         else:
-            for k, v in update_data.items():
-                self.job_log.update_one("JOBID")
+            return 0, update_data
 
 
 class TianHeWorker:

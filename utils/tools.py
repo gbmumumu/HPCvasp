@@ -59,21 +59,20 @@ class LogCsv:
         if new_label is None:
             tmp_dat.loc[tmp_dat[org_lb] == org_val] = new_val
         else:
-            # 找到对应的行，并修改对应行中的数据
-            pass
+            tmp_dat[new_label][tmp_dat[org_lb] == org_val] = new_val
 
         return tmp_dat
 
-    def update_one(self, label, value, new_value, **kwargs):
+    def update_one(self, label, value,  new_label=None, new_value=None, **kwargs):
         tmp = self.data.copy()
-        tmp = self._update(tmp, label, value, new_value)
+        tmp = self._update(tmp, label, value, new_label, new_value)
         self.apply(tmp, **kwargs)
 
-    def update_many(self, labels: list, values: list, new_values: list, **kwargs):
+    def update_many(self, label, value, new_values: dict, **kwargs):
         tmp = self.data.copy()
-        for idx, lb in enumerate(labels):
+        for key, val in new_values.items():
             try:
-                tmp = self._update(tmp, lb, values[idx], new_values[idx])
+                tmp = self._update(tmp, label, value, key, val)
             except:
                 continue
         self.apply(tmp, **kwargs)

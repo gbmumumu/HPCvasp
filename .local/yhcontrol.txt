@@ -1,6 +1,6 @@
-JobId=12341 Name=heeh_RRRG.sh
+JobId=122144 Name=xxx.sh
    UserId=nscc-gz_material_1(8970) GroupId=nscc-gz_material(9578)
-   Priority=1999 Account=nscc-gz_material QOS=normal WCKey=**
+   Priority=12 Account=nscc-gz_material QOS=normal WCKey=**
    JobState=RUNNING Reason=None Dependency=(null)
    Requeue=0 Restarts=0 BatchFlag=1 ExitCode=0:0
    RunTime=10-16:34:30 TimeLimit=UNLIMITED TimeMin=N/A
