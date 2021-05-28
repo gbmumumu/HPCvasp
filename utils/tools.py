@@ -26,7 +26,7 @@ def retry(max_retry=None, inter_time=None):
                     exit_code, results = func(*args, **kwargs)
                     if exit_code == 0:
                         break
-            return results
+            return exit_code, results
 
         return inner
 

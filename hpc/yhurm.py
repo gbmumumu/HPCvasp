@@ -12,7 +12,8 @@ from utils.tools import retry, get_output, LogCsv, dataframe_from_dict
 
 TH_LOCAL = SPath(r"./.local").absolute()
 TH_LOCAL.mkdir(exist_ok=True)
-CSV_HEAD = "JOBID,PARTITION,NAME,USER,ST,TIME,NODE,NODELIST(REASON),WORKDIR".split(',')
+YHQ_HEAD = "JOBID,PARTITION,NAME,USER,ST,TIME,NODE,NODELIST(REASON),WORKDIR".split(',')
+YHI_HEAD = ["CLASS", "ALLOC", "IDLE", "DRAIN", "TOTAL"]
 RUNNING_JOB_LOG = LogCsv(SPath(TH_LOCAL / "running_job.csv"))
 HPC_LOG = LogCsv(SPath(TH_LOCAL / "hpc.csv"))
 TEMP_FILE = SPath(TH_LOCAL / "tmp.txt")
@@ -55,7 +56,7 @@ class TianHeJob:
     def _yhcontrol_parser(output):
         regex = re.compile(r"\s*(.*?)=(.*?)\s+?")
         control = {}
-        for keyword in CSV_HEAD:
+        for keyword in YHQ_HEAD:
             for key, val in regex.findall(output):
                 key = key.upper()
                 if keyword == key:
@@ -125,7 +126,7 @@ class TianHeWorker:
 
     @staticmethod
     def _yhi_parser(log: SPath):
-        # log = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhi.txt")
+        log = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhi.txt")
         if not log.is_empty():
             dat = log.read_text().split()
             for item in dat:
@@ -135,16 +136,16 @@ class TianHeWorker:
                     except:
                         break
                     else:
-                        node_label = ["ALLOC", "IDLE", "DRAIN", "TOTAL"]
+                        node_info.insert(0, "SLURM")
                         return 0, dataframe_from_dict(
-                            dict(zip(node_label,
+                            dict(zip(YHI_HEAD,
                                      node_info))
                         )
         return 1, None
 
     @staticmethod
     def _yhq_parser(log: SPath):
-        # log = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhq.txt")
+        log = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhq.txt")
         if not log.is_empty():
             dat = pandas.read_table(log, sep=r"\s+")
             dat["WORKDIR"] = None
@@ -153,40 +154,40 @@ class TianHeWorker:
 
     @retry(max_retry=5, inter_time=5)
     def yhq(self):
-        ok, _ = get_output(f"yhqueue | grep {self.partition} > {TEMP_FILE}")
-        if ok != 0:
-            return ok, None
+        #ok, _ = get_output(f"yhqueue | grep {self.partition} > {TEMP_FILE}")
+        #if ok != 0:
+        #    return ok, None
         ok, yhq_data = self._yhq_parser(TEMP_FILE)
-        TEMP_FILE.rm_file()
+        # TEMP_FILE.rm_file()
         if ok != 0:
             return ok, None
-        try:
-            yhq_data.to_csv(str(self.running_job_log), index=False)
-        except:
-            return 1, None
-        else:
-            return 0, yhq_data
+        return 0, yhq_data
 
     @retry(max_retry=5, inter_time=5)
     def yhi(self):
-        ok, _ = get_output(f"yhinfo -s | grep {self.partition} > {TEMP_FILE}")
-        if ok != 0:
-            return ok, None
+        #ok, _ = get_output(f"yhinfo -s | grep {self.partition} > {TEMP_FILE}")
+        #if ok != 0:
+        #    return ok, None
         ok, yhi_data = self._yhi_parser(TEMP_FILE)
+        # TEMP_FILE.rm_file()
         if ok != 0:
             return ok, None
-        try:
-            yhi_data.to_csv(str(self.hpc_log), index=False)
-        except:
-            return 1, None
-        else:
-            TEMP_FILE.rm_file()
-            return 0, yhi_data
+
+        return 0, yhi_data
 
     def flush(self):
-        self.yhq()
-        self.yhi()
-
+        _, sys_yhi = self.yhi()
+        _, user_yhq = self.yhq()
+        self.used = user_yhq["NODES"].sum()
+        user_yhi = dataframe_from_dict(
+            dict(zip(YHI_HEAD,
+                     ["User", self.alloc, self.used, None, None]))
+        )
+        sys_yhi.append(user_yhi, ignore_index=True)
+        user_yhq.to_csv(str(self.running_job_log), index=False)
+        print(sys_yhi)
+        #yhi_data.to_csv(str(self.hpc_log), index=False)
+        #print(used_node)
 
 class TianHeNodes:
     def __init__(self, job_id, cn_list):
