@@ -181,13 +181,12 @@ class TianHeWorker:
         self.used = user_yhq["NODES"].sum()
         user_yhi = dataframe_from_dict(
             dict(zip(YHI_HEAD,
-                     ["User", self.alloc, self.used, None, None]))
+                     ["USER", self.alloc, self.used, None, None]))
         )
-        sys_yhi.append(user_yhi, ignore_index=True)
+        all_yhi = sys_yhi.append(user_yhi, ignore_index=True)
         user_yhq.to_csv(str(self.running_job_log), index=False)
-        print(sys_yhi)
-        #yhi_data.to_csv(str(self.hpc_log), index=False)
-        #print(used_node)
+        all_yhi.to_csv(str(self.hpc_log), index=False)
+
 
 class TianHeNodes:
     def __init__(self, job_id, cn_list):
