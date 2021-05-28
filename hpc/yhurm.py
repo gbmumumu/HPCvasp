@@ -8,13 +8,13 @@ import pandas
 import logging
 
 from utils.spath import SPath
-from utils.tools import retry, get_output, LogCsv
+from utils.tools import retry, get_output, LogCsv, dataframe_from_dict
 
 TH_LOCAL = SPath(r"./.local").absolute()
 TH_LOCAL.mkdir(exist_ok=True)
 CSV_HEAD = "JOBID,PARTITION,NAME,USER,ST,TIME,NODE,NODELIST(REASON),WORKDIR".split(',')
 RUNNING_JOB_LOG = LogCsv(SPath(TH_LOCAL / "running_job.csv"))
-HPC_LOG = LogCsv(SPath(TH_LOCAL / "hpc.log"))
+HPC_LOG = LogCsv(SPath(TH_LOCAL / "hpc.csv"))
 TEMP_FILE = SPath(TH_LOCAL / "tmp.txt")
 
 
@@ -34,7 +34,7 @@ class TianHeJob:
         self.name = name
 
     @property
-    def running_log(self):
+    def running_job_log(self):
         return RUNNING_JOB_LOG
 
     @retry(max_retry=5, inter_time=5)
@@ -42,7 +42,7 @@ class TianHeJob:
         ok, _ = get_output(f"yhcancel {self.id}")
         if ok != 0:
             return ok, None
-        self.running_log.drop_one(label="JOBID", value=self.id)
+        self.running_job_log.drop_one(label="JOBID", value=self.id)
         return 0, None
 
     @staticmethod
@@ -96,15 +96,11 @@ class TianHeJob:
         _, update_data = self._yhcontrol_parser(output)
         job_id = update_data["JOBID"]
         try:
-            if not self.running_log.is_contain("JOBID", job_id):
-                tmp = {}
-                for k, v in update_data.items():
-                    tmp[k] = [v]
-                new_data = pandas.DataFrame.from_dict(tmp)
-                del tmp
-                self.running_log.insert_one(new_data, index=False)
+            if not self.running_job_log.is_contain("JOBID", job_id):
+                new_data = dataframe_from_dict(update_data)
+                self.running_job_log.insert_one(new_data, index=False)
             else:
-                self.running_log.update_many("JOBID", job_id, update_data, index=False)
+                self.running_job_log.update_many("JOBID", job_id, update_data, index=False)
         except:
             return 1, None
         else:
@@ -115,7 +111,7 @@ class TianHeWorker:
     def __init__(self, partition="work", total_allowed_node=50,
                  used_node=1, idle_node=None):
         self.partition = partition
-        self.total = total_allowed_node
+        self.alloc = total_allowed_node
         self.used = used_node
         self.idle = idle_node
 
@@ -124,14 +120,26 @@ class TianHeWorker:
         return HPC_LOG
 
     @property
-    def running_log(self):
+    def running_job_log(self):
         return RUNNING_JOB_LOG
 
     @staticmethod
     def _yhi_parser(log: SPath):
+        # log = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhi.txt")
         if not log.is_empty():
-            dat = pandas.read_table(log, sep=r"\s+")
-            return 0, dat
+            dat = log.read_text().split()
+            for item in dat:
+                if "/" in item:
+                    try:
+                        node_info = [int(i) for i in item.split("/")]
+                    except:
+                        break
+                    else:
+                        node_label = ["ALLOC", "IDLE", "DRAIN", "TOTAL"]
+                        return 0, dataframe_from_dict(
+                            dict(zip(node_label,
+                                     node_info))
+                        )
         return 1, None
 
     @staticmethod
@@ -153,7 +161,7 @@ class TianHeWorker:
         if ok != 0:
             return ok, None
         try:
-            yhq_data.to_csv(str(self.running_log), index=False)
+            yhq_data.to_csv(str(self.running_job_log), index=False)
         except:
             return 1, None
         else:
@@ -163,21 +171,50 @@ class TianHeWorker:
     def yhi(self):
         ok, _ = get_output(f"yhinfo -s | grep {self.partition} > {TEMP_FILE}")
         if ok != 0:
-            return 0, None
+            return ok, None
+        ok, yhi_data = self._yhi_parser(TEMP_FILE)
+        if ok != 0:
+            return ok, None
+        try:
+            yhi_data.to_csv(str(self.hpc_log), index=False)
+        except:
+            return 1, None
+        else:
+            TEMP_FILE.rm_file()
+            return 0, yhi_data
 
-        ok, yhi_data = self._yhi_parser()
+    def flush(self):
+        self.yhq()
+        self.yhi()
 
 
-class TianHeCn:
-    def __init__(self, cn_list):
+class TianHeNodes:
+    def __init__(self, job_id, cn_list):
+        self.job_id = job_id
         self.cn_list = cn_list
 
     @staticmethod
-    def _cn_parser(cn_string):
-        pass
+    def _string_parser(cn_string):
+        tmp = cn_string.strip("[").strip("]")
+        _tmp = tmp.split(',')
+        used_nodes = []
+        for i in _tmp:
+            j = i.replace("cn[", "").replace("]", "")
+            if '-' in j:
+                s, e = j.split('-')
+                used_nodes.extend(
+                    [k for k in range(int(s), int(e) + 1)]
+                )
+            else:
+                used_nodes.append(j)
+        return used_nodes
+
+    @property
+    def running_job_log(self):
+        return RUNNING_JOB_LOG
 
     @classmethod
-    def from_log(cls, log):
+    def from_log(cls, log: LogCsv):
         pass
 
 

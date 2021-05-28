@@ -33,6 +33,15 @@ def retry(max_retry=None, inter_time=None):
     return decorator
 
 
+def dataframe_from_dict(data: dict):
+    tmp = {}
+    for k, v in data.items():
+        tmp[k] = [v]
+    new_data = pandas.DataFrame.from_dict(tmp)
+    del tmp
+    return new_data
+
+
 def get_output(unix_cmd):
     return getstatusoutput(unix_cmd)
 
@@ -63,7 +72,7 @@ class LogCsv:
 
         return tmp_dat
 
-    def update_one(self, label, value,  new_label=None, new_value=None, **kwargs):
+    def update_one(self, label, value, new_label=None, new_value=None, **kwargs):
         tmp = self.data.copy()
         tmp = self._update(tmp, label, value, new_label, new_value)
         self.apply(tmp, **kwargs)
