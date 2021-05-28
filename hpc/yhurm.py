@@ -10,6 +10,7 @@ from utils.tools import retry, get_output, LogCsv
 
 TH_LOCAL = SPath(r"./.local").absolute()
 TH_LOCAL.mkdir(exist_ok=True)
+JOB_HEAD = "JOBID,PARTITION,NAME,USER,ST,TIME,NODE,NODELIST(REASON),WORKDIR".split(',')
 
 
 class THCommandFailed(Exception):
@@ -40,22 +41,29 @@ class TianHeJob:
         return 0, None
 
     @staticmethod
-    def _yhcancel_parser(output):
-        pass
-
-    @staticmethod
     def _yhbatch_parser(output, **kwargs):
         job_id = output.split()[-1]
-        kwargs.update({"JobId": job_id})
+        kwargs.update({"JOBID": job_id})
         return 0, kwargs
 
     @staticmethod
     def _yhcontrol_parser(output):
         regex = re.compile(r"\s*(.*?)=(.*?)\s+?")
         control = {}
-        for i in regex.findall(output):
-            key, val = i
-            control.update({key.upper(): int(val) if val.isnumeric() else val})
+        for keyword in JOB_HEAD:
+            for key, val in regex.findall(output):
+                key = key.upper()
+                if keyword == key:
+                    control.update({key: int(val) if val.isnumeric() else val})
+                else:
+                    if "NumNodes".upper() == key:
+                        control.update({"NODE": int(val)})
+                    if "Account".upper() == key:
+                        control.update({"USER": val})
+                    if "NodeList".upper() == key:
+                        control.update({"NODELIST(REASON)": val})
+                    if "RunTime".upper() == key:
+                        control.update({"TIME": val})
         return 0, control
 
     @retry(max_retry=5, inter_time=5)
@@ -74,10 +82,10 @@ class TianHeJob:
 
     @retry(max_retry=5, inter_time=5)
     def yhcontrol_show_job(self):
-        #ok, output = get_output(f"yhcontrol show job {self.id}")
-        #if ok != 0:
-        #    return ok, None
-        output = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhcontrol.txt").read_text()
+        ok, output = get_output(f"yhcontrol show job {self.id}")
+        if ok != 0:
+            return ok, None
+        # output = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhcontrol.txt").read_text()
         return self._yhcontrol_parser(output)
 
 
