@@ -4,7 +4,7 @@
 import re
 from monty import os
 import pandas
-
+import pexpect
 import logging
 
 from utils.spath import SPath
@@ -194,6 +194,8 @@ class TianHeNodes:
 
     @staticmethod
     def _string_parser(cn_string):
+        if "[" not in cn_string:
+            return [int(cn_string.strip("cn"))]
         tmp = cn_string.strip("[").strip("]")
         _tmp = tmp.split(',')
         used_nodes = []
@@ -212,13 +214,41 @@ class TianHeNodes:
     def running_job_log(self):
         return RUNNING_JOB_LOG
 
-    def get_cn(self):
+    def get_nodes(self):
         if self.running_job_log.is_contain("JOBID", self.job_id):
             job = self.running_job_log.get("JOBID", self.job_id)
+            job_cn = job["NODELIST(REASON)"]
+            return self._string_parser(job_cn.values.item())
+        TianHeWorker().flush()
+        if not self.running_job_log.is_contain("JOBID", self.job_id):
+            return None
+        return self.get_nodes()
 
-        # job_cn = job["NODELIST(REASON)"]
+    @staticmethod
+    def _kill_zombie_process(node, key_word):
+        child = pexpect.spawn("ssh cn%d" % node)
+        try:
+            q = child.expect(["yes/no", ""], timeout=5)
+            if q == 0:
+                child.sendline("yes")
+        except (pexpect.EOF, pexpect.TIMEOUT):
+            child.close()
+            return False
+        else:
+            child.send(
+                "for i in `ps aux | grep %s |awk \'{print $2}\'`;do kill -9 $i;done" % key_word
+            )
+            child.close()
+        return True
 
-        # return self._string_parser(job_cn.values.item())
+    def kill_zombie_process_on_nodes(self, key_word="vasp_std"):
+        results = []
+        for node in self.get_nodes():
+            results.append(
+                self._kill_zombie_process(node, key_word)
+            )
+
+        return all(results)
 
 
 if __name__ == "__main__":
