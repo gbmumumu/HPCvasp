@@ -154,6 +154,14 @@ class TianHeJob:
         return self.get_time()
 
     def exceeds_time(self, limit_time=TianHeTime(3, 0, 0, 0), **kwargs):
+        if not isinstance(limit_time, TianHeTime):
+            try:
+                if isinstance(limit_time, str):
+                    limit_time = TianHeTime.from_string(limit_time)
+                elif isinstance(limit_time, list) or isinstance(limit_time, tuple):
+                    limit_time = TianHeTime(*limit_time)
+            except:
+                return None
         _time = self.get_time(**kwargs)
         if _time is not None:
             return _time > limit_time
@@ -239,8 +247,11 @@ class TianHeWorker:
         user_yhq.to_csv(str(self.running_job_log), index=False)
         all_yhi.to_csv(str(self.hpc_log), index=False)
 
-    def get_tle_job(self, time_limit):
-        pass
+    def yield_time_limit_exceed_jobs(self, time_limit=TianHeTime(3, 0, 0, 0)):
+        self.flush()
+        for job_id in self.running_job_log.data["JOBID"]:
+            if TianHeJob(job_id=job_id).exceeds_time(time_limit):
+                yield job_id
 
 
 class TianHeNodes:
