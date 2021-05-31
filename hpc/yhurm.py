@@ -5,6 +5,7 @@ import re
 from monty import os
 import pandas
 import pexpect
+
 import logging
 
 from utils.spath import SPath
@@ -21,6 +22,41 @@ TEMP_FILE = SPath(TH_LOCAL / "tmp.txt")
 
 class THCommandFailed(Exception):
     pass
+
+
+class TianHeTime:
+    def __init__(self, days=0, hours=0, mins=0, secs=0):
+        self.days = days
+        self.hours = hours
+        self.mins = mins
+        self.secs = secs
+
+    def __gt__(self, other):
+        return (self.days, self.hours, self.mins, self.secs) \
+               > (other.days, other.hours, other.mins, other.secs)
+
+    def __eq__(self, other):
+        return (self.days, self.hours, self.mins, self.secs) \
+               == (other.days, other.hours, other.mins, other.secs)
+
+    def __repr__(self):
+        return f"{self.days}-{self.hours}:{self.mins}:{self.secs}"
+
+    @classmethod
+    def from_string(cls, time_string):
+        if '-' in time_string:
+            days, rems = time_string.split('-')
+        else:
+            days, rems = 0, time_string
+        hms_list = [int(i) for i in rems.split(':')]
+        z = [0, ] * 3
+        hms_list.reverse()
+        for idx, t in enumerate(hms_list):
+            z[idx] = t
+        z.append(int(days))
+        z.reverse()
+
+        return cls(*z)
 
 
 class TianHeJob:
@@ -107,6 +143,22 @@ class TianHeJob:
         else:
             return 0, update_data
 
+    def get_time(self, **kwargs):
+        if self.running_job_log.is_contain("JOBID", self.id):
+            job = self.running_job_log.get("JOBID", self.id)
+            job_cn = job["TIME"]
+            return TianHeTime.from_string(job_cn.values.item())
+        TianHeWorker(**kwargs).flush()
+        if not self.running_job_log.is_contain("JOBID", self.id):
+            return None
+        return self.get_time()
+
+    def exceeds_time(self, limit_time=TianHeTime(3, 0, 0, 0), **kwargs):
+        _time = self.get_time(**kwargs)
+        if _time is not None:
+            return _time > limit_time
+        return None
+
 
 class TianHeWorker:
     def __init__(self, partition="work", total_allowed_node=50,
@@ -187,6 +239,9 @@ class TianHeWorker:
         user_yhq.to_csv(str(self.running_job_log), index=False)
         all_yhi.to_csv(str(self.hpc_log), index=False)
 
+    def get_tle_job(self, time_limit):
+        pass
+
 
 class TianHeNodes:
     def __init__(self, job_id):
@@ -214,12 +269,12 @@ class TianHeNodes:
     def running_job_log(self):
         return RUNNING_JOB_LOG
 
-    def get_nodes(self):
+    def get_nodes(self, **kwargs):
         if self.running_job_log.is_contain("JOBID", self.job_id):
             job = self.running_job_log.get("JOBID", self.job_id)
             job_cn = job["NODELIST(REASON)"]
             return self._string_parser(job_cn.values.item())
-        TianHeWorker().flush()
+        TianHeWorker(**kwargs).flush()
         if not self.running_job_log.is_contain("JOBID", self.job_id):
             return None
         return self.get_nodes()
