@@ -30,14 +30,14 @@ class INCAR:
             if ';' in line:
                 for child_line in line.split(';'):
                     key, val = regex.findall(child_line)[0]
-                    paras[key] = cls.clear_paras(key, val)
+                    paras[key] = cls._clear_paras(key, val)
             else:
                 key, val = regex.findall(line)[0]
-                paras[key] = cls.clear_paras(key, val)
+                paras[key] = cls._clear_paras(key, val)
         return cls(**paras)
 
     @staticmethod
-    def clear_paras(key, raw_val):
+    def _clear_paras(key, raw_val):
         if key in INCAR.LIST_TYPE_KEYS:
             val = []
             regex = re.compile(r"\s+")
@@ -64,13 +64,13 @@ class INCAR:
         return self._paras
 
     def __setitem__(self, key, value):
-        self._paras[key.strip()] = self.clear_paras(key.strip(), str(value))
+        self._paras[key.strip()] = self._clear_paras(key.strip(), str(value))
 
     def __getitem__(self, item):
         return self._paras.get(item)
 
     @staticmethod
-    def make_string(key, val):
+    def _make_string(key, val):
         if key in INCAR.LIST_TYPE_KEYS:
             return ' '.join([str(i) for i in val])
         elif key in INCAR.INT_TYPE_KEYS or key in INCAR.FLOAT_TYPE_KEYS:
@@ -90,7 +90,7 @@ class INCAR:
         incar.rm_file()
         for key, val in self.paras.items():
             incar.add_to_text(
-                f"{key} = {self.make_string(key, val)}"
+                f"{key} = {self._make_string(key, val)}"
             )
 
 
