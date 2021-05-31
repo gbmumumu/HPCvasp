@@ -6,8 +6,6 @@ from monty import os
 import pandas
 import pexpect
 
-import logging
-
 from utils.spath import SPath
 from utils.tools import retry, get_output, LogCsv, dataframe_from_dict
 

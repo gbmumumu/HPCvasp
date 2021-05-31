@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import configparser
 import pathlib
 import os
-
-import pandas
+import yaml
+import json
 
 
 class SPath(type(pathlib.Path())):
@@ -69,9 +70,39 @@ class SPath(type(pathlib.Path())):
     def is_empty(self):
         return os.path.getsize(self) == 0
 
+    def read_json(self):
+        if ".json" == self.suffix:
+            with self.open() as f:
+                return json.load(f)
+        return None
 
+    def _read_ini(self):
+        if ".ini" == self.suffix:
+            configs = configparser.ConfigParser()
+            configs.read(str(self))
+            return configs
+        return None
 
+    def get_configs_from_ini(self, section, option, dtype=""):
+        cfg = self._read_ini()
+        if cfg is not None:
+            if not dtype:
+                return cfg.get(section, option)
+            elif cfg == "int":
+                return cfg.getint(section, option)
+            elif cfg == "float":
+                return cfg.getfloat(section, option)
+            elif cfg == "boolean":
+                return cfg.getboolean(section, option)
+            else:
+                raise TypeError
+        return None
 
+    def read_yaml(self):
+        if self.suffix == ".yaml":
+            configs = yaml.safe_load(self.open().read())
+            return configs
+        return None
 
 
 if __name__ == "__main__":
