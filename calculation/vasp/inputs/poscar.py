@@ -179,7 +179,7 @@ class POSCAR:
                  symbol=None, symbol_num=None, coords=None, is_cart=True):
         self.title = title
         self.scale = scale
-        self.lattice = _Lattice(lattice)
+        self.lattice = _Lattice(lattice, scale)
         self.symbol = symbol
         self.symbol_num = symbol_num
         self.coords = coords
@@ -219,18 +219,19 @@ class POSCAR:
 
     @property
     def numbers(self):
-        atomic_number = {v: k for k, v in ELEMENTS.items()}
+        tmp = {v: k for k, v in ELEMENTS.items()}
         numbers = []
         for idx, e in enumerate(self.symbol):
-            n = atomic_number.get(e)
+            n = tmp.get(e)
             numbers.extend([n, ] * self.symbol_num[idx])
-
+        del tmp
         return numbers
 
     def get_primitive(self):
-        spg.find_primitive(
+        cell = spg.find_primitive(
             cell=(self.lattice.lattice, self.coords, self.numbers)
         )
+        print(cell)
 
 
 if __name__ == '__main__':

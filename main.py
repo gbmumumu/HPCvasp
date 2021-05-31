@@ -22,4 +22,5 @@ if __name__ == '__main__':
     z = SPath(r"./.local")
     poscar = z / "POSCAR"
     p = POSCAR.from_file(poscar)
+    p.get_primitive()
 
