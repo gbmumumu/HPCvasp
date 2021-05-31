@@ -47,11 +47,12 @@ def get_output(unix_cmd):
 
 
 def smart_fmt(string: str):
-    if string.isnumeric():
+    if string.isalpha():
+        return string
+    else:
         if '.' in string or 'e' in string or 'E' in string:
             return float(string)
         return int(string)
-    return string
 
 
 class LogCsv:

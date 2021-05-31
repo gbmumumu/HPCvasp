@@ -3,6 +3,7 @@
 
 import configparser
 import pathlib
+import shutil
 import os
 import yaml
 import json
@@ -28,21 +29,20 @@ class SPath(type(pathlib.Path())):
         finally:
             self.rmdir()
 
-    def copy(self, des):
-        import shutil
-
+    def copy_to(self, des):
         if not isinstance(des, SPath):
             des = SPath(des)
-        assert self.is_file()
+        assert self.is_file() and not self.is_empty()
+        if self.parent == des.parent:
+            have = list(self.parent.rglob(des.name + '*'))
+            if have:
+                n = len(have)
+                des.rename(f"{self.parent / des.name}_{n}")
         try:
             shutil.copy(str(self), str(des))
         except shutil.SameFileError:
             return
-        if self.parent == des.parent:
-            have = list(self.parent.rglob(self.name))
-            if have:
-                n = len(have)
-                self.rename(f"{self.parent / self.name}_{n}")
+
         return
 
     def walk(self, pattern='*', depth=1, is_file=True):

@@ -1,0 +1,6 @@
+SYSYTEM = xyz
+LDAUU = 1.2 3.8
+LDAU = True
+LWAVE = True
+NSW = 100
+EDIFF = 0.0001
