@@ -12,12 +12,12 @@ class OSZICAR:
         self.osizcar = filepath
 
     def __len__(self):
-        return len(self.run())
+        return len(self.read())
 
     def __getitem__(self, item):
-        return self.run()[item]
+        return self.read()[item]
 
-    def run(self):
+    def read(self):
         steps, idx = [], 1
         regex = re.compile(r"(\d+\s|-?.?\d+.?E?[+|-]?\d+)")
         for line in self.osizcar.readline_text():
@@ -35,7 +35,7 @@ class OSZICAR:
 
     @property
     def final_step(self):
-        return self.run()[-1].get(len(self))
+        return self.read()[-1].get(len(self))
 
     @property
     def final_energy(self):
