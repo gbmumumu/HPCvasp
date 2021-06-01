@@ -8,7 +8,8 @@ from calculation.vasp.inputs import POSCAR
 
 
 class KPOINTS:
-    def __init__(self, mode, mesh, shift=(0, 0, 0), path=None):
+    def __init__(self, title="MATGEN KPT", mode=None, mesh=None, shift=(0, 0, 0), path=None):
+        self.title = title
         self.mode = mode
         self.mesh = mesh
         self.shift = shift
@@ -18,11 +19,13 @@ class KPOINTS:
         pass
 
     @classmethod
-    def from_file(cls, filepath):
-        pass
+    def from_file(cls, filepath: SPath, **kwargs):
+        for line in filepath.readline_text(**kwargs):
+            pass
 
     def get_kmesh(self, poscar: POSCAR):
-        pass
+        va, vb, vc = poscar.lattice.lattice
+
 
     def get_hk_path(self, poscar: POSCAR):
         pass
