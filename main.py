@@ -6,6 +6,7 @@ if __name__ == '__main__':
     from utils.spath import SPath
     from utils import yhurm
     from calculation.vasp.inputs import POSCAR
+    from calculation.vasp.outputs.oszicar import OSZICAR
 
     v = yhurm.TianHeJob(job_id=17123506).get_time()
     pz = yhurm.TianHeWorker().yield_time_limit_exceed_jobs()
@@ -19,5 +20,5 @@ if __name__ == '__main__':
     poscar = z / "POSCAR"
     p = POSCAR.from_file(poscar)
     r = p.get_primitive()
-    print(r)
-    r.write(SPath(r"./.local/test.vasp"))
+    oz = z / "OSZICAR"
+    o = OSZICAR(oz)
