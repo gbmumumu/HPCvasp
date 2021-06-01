@@ -3,12 +3,8 @@
 
 
 if __name__ == '__main__':
-    from time import sleep
     from utils.spath import SPath
-    from hpc import yhurm
-    from utils.tools import LogCsv
-    from calculation.vasp.errors.eskill import ESkill
-    from calculation.vasp.inputs import INCAR
+    from utils import yhurm
     from calculation.vasp.inputs import POSCAR
 
     v = yhurm.TianHeJob(job_id=17123506).get_time()
