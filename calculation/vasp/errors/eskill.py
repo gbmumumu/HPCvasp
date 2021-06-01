@@ -9,10 +9,16 @@ class ESkill:
     def __init__(self, running_dir: SPath):
         self.running_root = running_dir
 
-    def modify_incar(self):
+    def modify_incar(self, **kwargs):
         incar = INCAR.from_file(
             SPath(self.running_root / "INCAR")
         )
+        for key, item in kwargs.items():
+            incar[key] = item
+
+        incar.write(SPath(
+            self.running_root / "INCAR"
+        ))
 
     def modify_kpoints(self):
         kpoints = SPath(self.running_root / "KPOINTS")
