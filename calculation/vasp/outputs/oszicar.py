@@ -8,8 +8,8 @@ from utils.tools import smart_fmt
 
 
 class OSZICAR:
-    def __init__(self, filepath: SPath):
-        self.osizcar = filepath
+    def __init__(self, oszicar: SPath):
+        self.oszicar = oszicar
 
     def __len__(self):
         return len(self.read())
@@ -20,7 +20,7 @@ class OSZICAR:
     def read(self):
         steps, idx = [], 1
         regex = re.compile(r"(\d+\s|-?.?\d+.?E?[+|-]?\d+)")
-        for line in self.osizcar.readline_text():
+        for line in self.oszicar.readline_text():
             if "F=" in line:
                 p = regex.findall(line)
                 idx, *p = [smart_fmt(i) for i in p]
