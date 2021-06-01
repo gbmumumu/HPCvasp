@@ -22,5 +22,6 @@ if __name__ == '__main__':
     z = SPath(r"./.local")
     poscar = z / "POSCAR"
     p = POSCAR.from_file(poscar)
-    p.get_primitive()
-
+    r = p.get_primitive()
+    print(r)
+    r.write(SPath(r"./.local/test.vasp"))

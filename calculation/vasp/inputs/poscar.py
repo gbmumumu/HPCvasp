@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from collections import OrderedDict
 
 import spglib as spg
 
@@ -184,6 +185,7 @@ class POSCAR:
         self.symbol_num = symbol_num
         self.coords = coords
         self.is_cart = is_cart
+        self.coord_type = "Direct" if not is_cart else "Cartesian"
 
     @classmethod
     def from_file(cls, filepath: SPath, **kwargs):
@@ -202,10 +204,7 @@ class POSCAR:
         nums = [smart_fmt(i) for i in next(file).split()]
         nt = np.asarray(nums, dtype=int).sum()
         coord_type = next(file)
-        if 'd' == coord_type.lower()[0]:
-            is_cart = True
-        else:
-            is_cart = False
+        is_cart = False if 'd' == coord_type.lower()[0] else True
         coords = []
         for _ in range(nt):
             coords.append(
@@ -228,10 +227,46 @@ class POSCAR:
         return numbers
 
     def get_primitive(self):
-        cell = spg.find_primitive(
+        new_latt, new_coords, new_numbers = spg.find_primitive(
             cell=(self.lattice.lattice, self.coords, self.numbers)
         )
-        print(cell)
+        d = OrderedDict()
+        for item in [ELEMENTS.get(i) for i in new_numbers]:
+            if d.get(item) is None:
+                d[item] = 1
+            else:
+                d[item] += 1
+        new_symbol = list(d.keys())
+        new_symbol_num = list(d.values())
+        title = ''
+        for idx, s in enumerate(new_symbol):
+            s += str(new_symbol_num[idx])
+            title += s
+
+        return POSCAR(title, 1.0, new_latt, new_symbol,
+                      new_symbol_num, new_coords, is_cart=False)
+
+    def __repr__(self):
+        latt_str = ''
+        for i in self.lattice.lattice:
+            latt_str += '\t'.join(str(j) for j in i)
+            latt_str += '\n'
+        coords_str = ''
+        for k in self.coords:
+            coords_str += '\t'.join(str(m) for m in k)
+            coords_str += '\n'
+        symbol_str = '\t'.join(self.symbol)
+        symbol_num_str = '\t'.join([str(n) for n in self.symbol_num])
+        return f"{self.title}\n" \
+               f"{self.scale}\n" \
+               f"{latt_str}" \
+               f"{symbol_str}\n" \
+               f"{symbol_num_str}\n" \
+               f"{self.coord_type}\n" \
+               f"{coords_str}"
+
+    def write(self, filepath: SPath, **kwargs):
+        filepath.write_text(str(self), **kwargs)
 
 
 if __name__ == '__main__':
