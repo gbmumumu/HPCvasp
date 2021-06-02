@@ -46,13 +46,18 @@ def get_output(unix_cmd):
     return getstatusoutput(unix_cmd)
 
 
-def smart_fmt(string: str):
-    if string.isalpha():
-        return string
-    else:
-        if '.' in string or 'e' in string or 'E' in string:
-            return float(string)
-        return int(string)
+def smart_fmt(inputs):
+    if isinstance(inputs, str):
+        if inputs.isalpha():
+            return inputs
+        else:
+            if '.' in inputs or 'e' in inputs or 'E' in inputs:
+                return float(inputs)
+            return int(inputs)
+    if isinstance(inputs, list) or isinstance(inputs, tuple):
+        return [smart_fmt(i) for i in inputs]
+
+    raise TypeError
 
 
 class LogCsv:

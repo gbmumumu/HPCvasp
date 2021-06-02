@@ -8,6 +8,8 @@ import os
 import yaml
 import json
 
+from monty.io import reverse_readfile
+
 
 class SPath(type(pathlib.Path())):
     def rm_file(self):
@@ -58,6 +60,9 @@ class SPath(type(pathlib.Path())):
             for line in f:
                 yield line.strip('\n')
 
+    def readline_text_reversed(self):
+        yield from reverse_readfile(str(self))
+
     def add_to_text(self, data, encoding='utf-8', errors='ignore'):
         if not isinstance(data, str):
             raise TypeError('data must be str, not %s' %
@@ -76,13 +81,14 @@ class SPath(type(pathlib.Path())):
                 return json.load(f)
         return None
 
-    def _read_ini(self):
+    def read_ini(self):
         if ".ini" == self.suffix:
             configs = configparser.ConfigParser()
             configs.read(str(self))
             return configs
         return None
 
+    """
     def get_configs_from_ini(self, section, option, dtype=""):
         cfg = self._read_ini()
         if cfg is not None:
@@ -97,6 +103,7 @@ class SPath(type(pathlib.Path())):
             else:
                 raise TypeError
         return None
+    """
 
     def read_yaml(self):
         if self.suffix == ".yaml":

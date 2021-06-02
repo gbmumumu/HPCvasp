@@ -1,22 +1,27 @@
 {
   "Test_spin": {
     "node": 1,
-    "core": 24
+    "core": 24,
+    "try_num": 2
   },
   "Relax": {
     "node": 1,
-    "core": 24
+    "core": 24,
+    "try_num": 5
   },
   "Scf": {
     "node": 1,
-    "core": 24
+    "core": 24,
+    "try_num": 2
   },
   "Band": {
     "node": 1,
-    "core": 24
+    "core": 24,
+    "try_num": 2
   },
   "Dos": {
     "node": 1,
-    "core": 24
+    "core": 24,
+    "try_num": 2
   }
 }

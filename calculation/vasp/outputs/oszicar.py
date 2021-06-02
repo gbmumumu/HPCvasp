@@ -38,15 +38,15 @@ class OSZICAR:
         return self.read()[-1].get(len(self))
 
     @property
-    def E0(self):
+    def final_E0(self):
         return self.final_step.get("E0")
 
     @property
-    def dE(self):
+    def final_dE(self):
         return self.final_step.get("dE")
 
     @property
-    def mag(self):
+    def final_mag(self):
         return self.final_step.get("mag")
 
 
