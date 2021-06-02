@@ -26,6 +26,9 @@ class OUTCAR:
 
         return False
 
+    @property
+    def data(self):
+        return Outcar(str(self.outcar))
 
 
 if __name__ == '__main__':

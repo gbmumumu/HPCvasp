@@ -2,15 +2,16 @@
 # -*- coding: utf-8 -*-
 
 
-from config import WORKFLOW, CONDOR
+from config import WORKFLOW, CONDOR, PACKAGE_ROOT
 from utils.spath import SPath
 from calculation.vasp.outputs import OUTCAR, OSZICAR
 from calculation.vasp.inputs import INCAR, KPOINTS, POSCAR, POTCAR
 
 
 class WorkflowParser:
-    def __init__(self, comment=None, source=None,
+    def __init__(self,  work_root: SPath, comment=None, source=None,
                  modules=None, workflow=None, prog=None):
+        self.work_root = work_root
         if comment is None:
             comment = "#!/bin/bash"
         self.comment = comment
@@ -20,6 +21,7 @@ class WorkflowParser:
         if workflow is None:
             workflow = WORKFLOW
         self.workflow = workflow
+        self._py = PACKAGE_ROOT / "main.py"
 
     def yield_job(self):
         for job_name, job_paras in self.workflow.items():
@@ -39,6 +41,8 @@ class WorkflowParser:
 
     def parser(self, job_name, job_paras):
         flow = ''
+        task_dir = self.work_root / job_name
+        flow += f"echo \'start {job_name} task\'"
         flow += f"mkdir {job_name} && cd {job_name}\n"
         node = job_paras.get("node")
         core = job_paras.get("core")
@@ -47,14 +51,18 @@ class WorkflowParser:
             core = 24
         if core is None:
             core = 24 * node
-
+        flow += f"echo \'prepare {job_name} inputs.\'"
         try_keyword = "try_num"
-        if try_keyword in job_paras.keys():
-            try_num = job_paras.get(try_keyword)
-            if try_num is not None:
-                flow += f"for ((try_num=0;try_num<={try_num};try_num++))\n"
-                flow += "  do"
-                flow += f"  {self.yhrun_prog(node, core)}"
+        try_num = job_paras.get(try_keyword)
+        if try_num is None:
+            try_num = 1
+
+        flow += f"for ((try_num=0;try_num<={try_num};try_num++))\n"
+        flow += "  do\n"
+        flow += f"  echo \' round: {try_num} on {node} node {core} core\'"
+        flow += f"  {self.yhrun_prog(node, core)}\n"
+        flow += f"  python {self._py}\n"
+        flow += f"  "
 
 
 class VaspRunningJob:
