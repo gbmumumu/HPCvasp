@@ -31,6 +31,11 @@ def process_errors(work_dir):
     return VaspRunningJob(work_dir).process_errors()
 
 
+@click.command()
+def prepare_job(work_dir, job_type):
+    return VaspRunningJob(work_dir).prepare_job(job_type)
+
+
 if __name__ == '__main__':
     from utils.spath import SPath
     from utils import yhurm

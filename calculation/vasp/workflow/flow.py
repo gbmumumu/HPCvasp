@@ -61,7 +61,14 @@ class WorkflowParser:
         flow += "  do\n"
         flow += f"  echo \' round: {try_num} on {node} node {core} core\'"
         flow += f"  {self.yhrun_prog(node, core)}\n"
-        flow += f"  python {self._py}\n"
+        flow += f"  if [ $? -eq 0 ]; then\n"
+        flow += f"    echo \'yhrun success\'\n"
+        flow += f"    python {self._py}\n" # 检查是否收敛
+        flow += f"    "
+        flow += f"  else\n"
+        flow += f"    echo \'yhrun failed!\'\n"
+        flow += f"  fi\n"
+
         flow += f"  "
 
 
@@ -76,14 +83,21 @@ class VaspRunningJob:
 
     def is_spin(self):
         oszicar = self.calc_dir / "OSZICAR"
-        if OSZICAR(oszicar).final_mag > 0.004:
+        final_mag = OSZICAR(oszicar).final_mag
+        if final_mag > 0.004:
+            is_spin = self.calc_dir / "is_spin.txt"
+            is_spin.write_text(str(final_mag))
             return True
         return False
 
     def is_converge(self):
         outcar = self.calc_dir / "OUTCAR"
         result = OUTCAR(outcar)
-        return result.converged() and result.finished()
+        if result.converged() and result.finished():
+            converge = self.calc_dir / "converge.txt"
+            converge.touch()
+            return True
+        return False
 
     def is_finish(self):
         outcar = self.calc_dir / "OUTCAR"
@@ -93,6 +107,9 @@ class VaspRunningJob:
         pass
 
     def process_errors(self):
+        pass
+
+    def prepare_job(self, job_type):
         pass
 
 
