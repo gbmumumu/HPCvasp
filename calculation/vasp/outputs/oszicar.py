@@ -38,15 +38,15 @@ class OSZICAR:
         return self.read()[-1].get(len(self))
 
     @property
-    def final_energy(self):
+    def E0(self):
         return self.final_step.get("E0")
 
     @property
-    def final_diff_energy(self):
+    def dE(self):
         return self.final_step.get("dE")
 
     @property
-    def final_total_mag(self):
+    def mag(self):
         return self.final_step.get("mag")
 
 
