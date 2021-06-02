@@ -42,6 +42,8 @@ class WorkflowParser:
     def parser(self, job_name, job_paras):
         flow = ''
         task_dir = self.work_root / job_name
+        converge_txt = task_dir / "converge.txt"
+        spin_txt = task_dir / "is_spin.txt"
         flow += f"echo \'start {job_name} task\'"
         flow += f"mkdir {job_name} && cd {job_name}\n"
         node = job_paras.get("node")
@@ -51,23 +53,30 @@ class WorkflowParser:
             core = 24
         if core is None:
             core = 24 * node
-        flow += f"echo \'prepare {job_name} inputs.\'"
         try_keyword = "try_num"
         try_num = job_paras.get(try_keyword)
         if try_num is None:
             try_num = 1
-
+        parent = job_paras.get("parent")
+        parent_dir = None
+        if parent is not None:
+            parent_dir = self.work_root / parent
+        flow += f"echo \'prepare {job_name} inputs.\'"
+        # 根据是否存在父任务及父任务结果准备输入文件
+        flow += f"python {self._py} "
         flow += f"for ((try_num=0;try_num<={try_num};try_num++))\n"
         flow += "  do\n"
         flow += f"  echo \' round: {try_num} on {node} node {core} core\'"
         flow += f"  {self.yhrun_prog(node, core)}\n"
         flow += f"  if [ $? -eq 0 ]; then\n"
         flow += f"    echo \'yhrun success\'\n"
-        flow += f"    python {self._py}\n" # 检查是否收敛
-        flow += f"    "
-        flow += f"  else\n"
-        flow += f"    echo \'yhrun failed!\'\n"
+        flow += f"    python {self._py}\n" # 检查是否收敛, 没有则根据错误信息自动调整参数
+        flow += f"    if [ -f \"{converge_txt}\" ];then\n"
+        flow += f"      break\n"
+        flow += f"    fi\n"
         flow += f"  fi\n"
+        flow += f"  echo \'yhrun failed!\'\n"
+        flow += f"  \n"
 
         flow += f"  "
 
@@ -92,8 +101,10 @@ class VaspRunningJob:
 
     def is_converge(self):
         outcar = self.calc_dir / "OUTCAR"
+        incar = self.calc_dir / "INCAR"
         result = OUTCAR(outcar)
-        if result.converged() and result.finished():
+        if (result.converged() and result.finished()) or \
+                (INCAR.from_file(incar).get("ISIF") != 3 and result.finished()):
             converge = self.calc_dir / "converge.txt"
             converge.touch()
             return True

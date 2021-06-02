@@ -7,21 +7,25 @@
   "Relax": {
     "node": 1,
     "core": 24,
-    "try_num": 5
+    "try_num": 5,
+    "parent": "Test_spin"
   },
   "Scf": {
     "node": 1,
     "core": 24,
-    "try_num": 2
+    "try_num": 2,
+    "parent": "Relax"
   },
   "Band": {
     "node": 1,
     "core": 24,
-    "try_num": 2
+    "try_num": 2,
+    "parent": "Scf"
   },
   "Dos": {
     "node": 1,
     "core": 24,
-    "try_num": 2
+    "try_num": 2,
+    "parent": "Scf"
   }
 }
