@@ -20,8 +20,17 @@ class ESkill:
             self.running_root / "INCAR"
         ))
 
-    def modify_kpoints(self):
-        kpoints = SPath(self.running_root / "KPOINTS")
+    def modify_kpoints(self, **kwargs):
+        kpoints = KPOINTS.from_file(
+            SPath(self.running_root / "KPOINTS")
+        )
+        for key, item in kwargs.items():
+            kpoints[key] = item
+
+        if kpoints.mode == 1:
+            pass
+        elif kpoints.mode == 2:
+            pass
 
     def update_poscar(self):
         contcar = SPath(self.running_root / "CONTCAR")
@@ -29,9 +38,7 @@ class ESkill:
         contcar.copy_to(poscar)
 
     def modify_potcar(self):
-        potcar = self.running_root / "POTCAR"
-
-
+        pass
 
 
 if __name__ == '__main__':
