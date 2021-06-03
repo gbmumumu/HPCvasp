@@ -12,6 +12,7 @@ _workflow = _config_root / "workflow.json"
 CONDOR = _condor.read_ini()
 WORKFLOW = _workflow.read_json()
 PACKAGE_ROOT = _config_root.parent
+RUNNING_DIR = PACKAGE_ROOT / "CALC"
 
 if __name__ == '__main__':
     pass

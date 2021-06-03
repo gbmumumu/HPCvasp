@@ -60,6 +60,12 @@ def smart_fmt(inputs):
     raise TypeError
 
 
+def init_job(name: SPath, mv):
+    filename_dir = name.mkdir_filename()
+    name.copy_to(filename_dir, mv)
+    return filename_dir
+
+
 class LogCsv:
     def __init__(self, csv: SPath):
         self.csv = csv
@@ -118,6 +124,18 @@ class LogCsv:
     def get(self, label, val):
         tmp = self.data.copy()
         return tmp[tmp[label] == val]
+
+    def touch(self, head: list, values: list, **kwargs):
+        nov = len(values)
+        tmp = dataframe_from_dict(
+            dict(zip(head, values[0]))
+        )
+        for idx in range(1, nov):
+            tmp = tmp.append(
+                dataframe_from_dict(
+                    dict(zip(head, values[idx]))), ignore_index=True
+            )
+        self.apply(new_data=tmp, **kwargs)
 
 
 if __name__ == '__main__':

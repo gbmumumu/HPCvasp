@@ -4,6 +4,8 @@
 import click
 
 from calculation.vasp.workflow import VaspRunningJob
+from utils.yhurm import TianHeJob, TianHeTime, TianHeWorker, TianHeNodes, TianHeJobManager
+from utils.spath import SPath
 
 
 @click.command()
@@ -37,12 +39,7 @@ def prepare_job(work_dir, job_type):
 
 
 if __name__ == '__main__':
-    from utils.spath import SPath
-    from utils import yhurm
-    from calculation.vasp.inputs import POSCAR
-    from calculation.vasp.outputs.oszicar import OSZICAR
-    from calculation.vasp.outputs.outcar import OUTCAR
-
-    from config import CONDOR, WORKFLOW, PACKAGE_ROOT
-
-    print(PACKAGE_ROOT)
+    tp = SPath(r"./test")
+    t = TianHeJobManager(tp)
+    # t.init_jobs()
+    t.submit()

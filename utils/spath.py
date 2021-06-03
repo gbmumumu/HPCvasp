@@ -31,21 +31,26 @@ class SPath(type(pathlib.Path())):
         finally:
             self.rmdir()
 
-    def copy_to(self, des):
+    def copy_to(self, des, mv_org=False):
         if not isinstance(des, SPath):
             des = SPath(des)
         assert self.is_file() and not self.is_empty()
+        if des.is_dir():
+            if not mv_org:
+                return shutil.copy(str(self), str(des))
+            return shutil.move(str(self), str(des))
+
         if self.parent == des.parent:
             have = list(self.parent.rglob(des.name + '*'))
             if have:
                 n = len(have)
                 des.rename(f"{self.parent / des.name}_{n}")
         try:
-            shutil.copy(str(self), str(des))
+            if not mv_org:
+                return shutil.copy(str(self), str(des))
+            return shutil.move(str(self), str(des))
         except shutil.SameFileError:
             return
-
-        return
 
     def walk(self, pattern='*', depth=1, is_file=True):
         assert self.is_dir()
@@ -110,6 +115,14 @@ class SPath(type(pathlib.Path())):
             configs = yaml.safe_load(self.open().read())
             return configs
         return None
+
+    def mkdir_filename(self):
+        name = self.name
+        for i in self.suffixes:
+            name = name.replace(i, "")
+        filename_dir = self.parent / name
+        filename_dir.mkdir()
+        return filename_dir
 
 
 if __name__ == "__main__":

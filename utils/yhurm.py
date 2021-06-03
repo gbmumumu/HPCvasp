@@ -5,9 +5,11 @@ import re
 from monty import os
 import pandas
 import pexpect
+from multiprocessing.pool import Pool
 
 from utils.spath import SPath
-from utils.tools import retry, get_output, LogCsv, dataframe_from_dict
+from utils.tools import retry, get_output, LogCsv, dataframe_from_dict, init_job
+from config import CONDOR
 
 TH_LOCAL = SPath(r"./.local").absolute()
 TH_LOCAL.mkdir(exist_ok=True)
@@ -16,6 +18,8 @@ YHI_HEAD = ["CLASS", "ALLOC", "IDLE", "DRAIN", "TOTAL"]
 RUNNING_JOB_LOG = LogCsv(SPath(TH_LOCAL / "running_job.csv"))
 HPC_LOG = LogCsv(SPath(TH_LOCAL / "hpc.csv"))
 TEMP_FILE = SPath(TH_LOCAL / "tmp.txt")
+ALL_JOB_LOG = LogCsv(SPath(TH_LOCAL / "all_job.csv"))
+ALL_JOB_HEAD = ["JOBID", "ST", "WORKDIR", "RESULT"]
 
 
 class THCommandFailed(Exception):
@@ -168,7 +172,7 @@ class TianHeJob:
 
 class TianHeWorker:
     def __init__(self, partition="work", total_allowed_node=50,
-                 used_node=1, idle_node=None):
+                 used_node=0, idle_node=None):
         self.partition = partition
         self.alloc = total_allowed_node
         self.used = used_node
@@ -313,6 +317,37 @@ class TianHeNodes:
             )
 
         return all(results)
+
+
+class TianHeJobManager:
+    def __init__(self, structures_path: SPath, interval_time=0.5):
+        self.structures_path = structures_path
+        self.interval_time = interval_time
+
+    def init_jobs(self, pat="*.poscar", mv_org=True):
+        job_pool = Pool(12)
+
+        job_dirs = []
+        for structure in self.structures_path.walk(pattern=pat, is_file=True):
+            job = job_pool.apply_async(init_job, args=(structure, mv_org))
+            job_dirs.append(job)
+
+        job_pool.close()
+        job_pool.join()
+        jobs = []
+        for job in job_dirs:
+            jobs.append(["", "", job.get(), ""])
+        ALL_JOB_LOG.touch(ALL_JOB_HEAD, jobs)
+
+        return True
+
+    def submit(self):
+        jobs = ALL_JOB_LOG.eval()
+        control = TianHeWorker(partition=CONDOR.get("ALLOW", "PARTITION"),
+                               total_allowed_node=CONDOR.getint("ALLOW", "TOTAL_NODE"))
+        control.flush()
+        for job_workdir in jobs["WORKDIR"]:
+            job_obj = TianHeJob()
 
 
 

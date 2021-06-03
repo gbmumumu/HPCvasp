@@ -58,10 +58,11 @@ class WorkflowParser:
         if try_num is None:
             try_num = 1
         parent = job_paras.get("parent")
-        parent_dir = None
-        if parent is not None:
-            parent_dir = self.work_root / parent
         flow += f"echo \'prepare {job_name} inputs.\'"
+        if parent is not None:
+            flow += f"if [ -a {spin_txt}]; then\n"
+            flow += f"  cp {spin_txt} ./"
+            flow += f"fi"
         # 根据是否存在父任务及父任务结果准备输入文件
         flow += f"python {self._py} "
         flow += f"for ((try_num=0;try_num<={try_num};try_num++))\n"
@@ -69,13 +70,13 @@ class WorkflowParser:
         flow += f"  echo \' round: {try_num} on {node} node {core} core\'"
         flow += f"  {self.yhrun_prog(node, core)}\n"
         flow += f"  if [ $? -eq 0 ]; then\n"
-        flow += f"    echo \'yhrun success\'\n"
+        flow += f"    echo \'calc success\'\n"
         flow += f"    python {self._py}\n" # 检查是否收敛, 没有则根据错误信息自动调整参数
         flow += f"    if [ -f \"{converge_txt}\" ];then\n"
         flow += f"      break\n"
         flow += f"    fi\n"
         flow += f"  fi\n"
-        flow += f"  echo \'yhrun failed!\'\n"
+        flow += f"  echo \'calc failed!\'\n"
         flow += f"  \n"
 
         flow += f"  "
