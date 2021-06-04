@@ -5,7 +5,7 @@ import click
 
 from calculation.vasp.workflow import VaspRunningJob
 from calculation.vasp.inputs import INCAR, POSCAR, KPOINTS, KPOINTSModes
-from calculation.vasp.errors import ESkill
+from calculation.vasp.errors import Skill
 from utils.yhurm import TianHeJob, TianHeTime, TianHeWorker, TianHeNodes, TianHeJobManager
 from utils.spath import SPath
 
@@ -46,5 +46,5 @@ if __name__ == '__main__':
     kpoints = t / "KPOINTS"
     poscar = t / "POSCAR"
 
-    e = ESkill(t)
+    e = Skill(t)
     e.modify_kpoints(new_k_val=66)

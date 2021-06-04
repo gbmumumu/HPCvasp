@@ -68,7 +68,7 @@ class WorkflowParser:
         flow += f"for ((try_num=0;try_num<={try_num};try_num++))\n"
         flow += "  do\n"
         flow += f"  echo \' round: {try_num} on {node} node {core} core\'"
-        flow += f"  {self.yhrun_prog(node, core)}\n"
+        flow += f"  {self.yhrun_prog(node, core)} > yh.log\n"
         flow += f"  if [ $? -eq 0 ]; then\n"
         flow += f"    echo \'calc success\'\n"
         flow += f"    python {self._py}\n" # 检查是否收敛, 没有则根据错误信息自动调整参数
