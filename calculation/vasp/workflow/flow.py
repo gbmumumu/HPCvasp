@@ -94,7 +94,7 @@ class VaspRunningJob:
     def is_spin(self):
         oszicar = self.calc_dir / "OSZICAR"
         final_mag = OSZICAR(oszicar).final_mag
-        if final_mag > 0.004:
+        if abs(final_mag) > 0.004:
             is_spin = self.calc_dir / "is_spin.txt"
             is_spin.write_text(str(final_mag))
             return True

@@ -94,8 +94,8 @@ class INCAR:
             )
 
     def __str__(self):
-        return repr(
-            self.paras
-        )
+        return repr(self.paras)
+
+
 if __name__ == '__main__':
     pass

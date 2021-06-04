@@ -8,24 +8,28 @@
     "node": 1,
     "core": 24,
     "try_num": 5,
-    "parent": "Test_spin"
+    "parent": "Test_spin",
+    "parent_files": ["POTCAR", "POSCAR"]
   },
   "Scf": {
     "node": 1,
     "core": 24,
     "try_num": 2,
-    "parent": "Relax"
+    "parent": "Relax",
+    "parent_files": ["POTCAR", "CONTCAR"]
   },
   "Band": {
     "node": 1,
     "core": 24,
     "try_num": 2,
-    "parent": "Scf"
+    "parent": "Scf",
+    "parent_files": ["POTCAR", "CONTCAR", "CHGCAR", "CHG", "WAVECAR"]
   },
   "Dos": {
     "node": 1,
     "core": 24,
     "try_num": 2,
-    "parent": "Scf"
+    "parent": "Scf",
+    "parent_files": ["POTCAR", "CONTCAR", "CHGCAR", "CHG", "WAVECAR"]
   }
 }
