@@ -226,9 +226,13 @@ class POSCAR:
         del tmp
         return numbers
 
+    @property
+    def structure(self):
+        return self.lattice.lattice, self.coords, self.numbers
+
     def get_primitive(self):
         new_latt, new_coords, new_numbers = spg.find_primitive(
-            cell=(self.lattice.lattice, self.coords, self.numbers)
+            cell=self.structure
         )
         d = OrderedDict()
         for item in [ELEMENTS.get(i) for i in new_numbers]:

@@ -93,6 +93,9 @@ class INCAR:
                 f"{key} = {self._make_string(key, val)}"
             )
 
-
+    def __str__(self):
+        return repr(
+            self.paras
+        )
 if __name__ == '__main__':
     pass
