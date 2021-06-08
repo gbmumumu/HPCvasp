@@ -5,7 +5,7 @@ import click
 
 from calculation.vasp.workflow import VaspRunningJob
 from calculation.vasp.inputs import INCAR, POSCAR, KPOINTS, KPOINTSModes
-from calculation.vasp.errors import Skill
+from calculation.vasp.workflow.etype import ErrType
 from utils.yhurm import TianHeJob, TianHeTime, TianHeWorker, TianHeNodes, TianHeJobManager
 from utils.spath import SPath
 
@@ -41,10 +41,11 @@ def prepare_job(work_dir, job_type):
 
 
 if __name__ == '__main__':
-    t = SPath(r"./test/calc/icsd_170660-Ta4Ga1Se8/Band")
+    t = SPath(r"./test/calc/icsd_170660-Ta4Ga1Se8/Relax")
     incar = t / "INCAR"
     kpoints = t / "KPOINTS"
     poscar = t / "POSCAR"
 
-    e = Skill(t)
-    e.modify_kpoints(new_k_val=66)
+    e = ErrType(t)
+    # e.update_inputs()
+    print(e.workflow_type)

@@ -13,17 +13,13 @@ from config import CONDOR
 
 TH_LOCAL = SPath(r"./.local").absolute()
 TH_LOCAL.mkdir(exist_ok=True)
-YHQ_HEAD = "JOBID,PARTITION,NAME,USER,ST,TIME,NODE,NODELIST(REASON),WORKDIR".split(',')
-YHI_HEAD = ["CLASS", "ALLOC", "IDLE", "DRAIN", "TOTAL"]
+_YHQ_HEAD = "JOBID,PARTITION,NAME,USER,ST,TIME,NODE,NODELIST(REASON),WORKDIR".split(',')
+_YHI_HEAD = ["CLASS", "ALLOC", "IDLE", "DRAIN", "TOTAL"]
 RUNNING_JOB_LOG = LogCsv(SPath(TH_LOCAL / "running_job.csv"))
 HPC_LOG = LogCsv(SPath(TH_LOCAL / "hpc.csv"))
 TEMP_FILE = SPath(TH_LOCAL / "tmp.txt")
 ALL_JOB_LOG = LogCsv(SPath(TH_LOCAL / "all_job.csv"))
-ALL_JOB_HEAD = ["JOBID", "ST", "WORKDIR", "RESULT"]
-
-
-class THCommandFailed(Exception):
-    pass
+_ALL_JOB_HEAD = ["JOBID", "ST", "WORKDIR", "RESULT"]
 
 
 class TianHeTime:
@@ -94,7 +90,7 @@ class TianHeJob:
     def _yhcontrol_parser(output):
         regex = re.compile(r"\s*(.*?)=(.*?)\s+?")
         control = {}
-        for keyword in YHQ_HEAD:
+        for keyword in _YHQ_HEAD:
             for key, val in regex.findall(output):
                 key = key.upper()
                 if keyword == key:
@@ -200,7 +196,7 @@ class TianHeWorker:
                     else:
                         node_info.insert(0, "SLURM")
                         return 0, dataframe_from_dict(
-                            dict(zip(YHI_HEAD,
+                            dict(zip(_YHI_HEAD,
                                      node_info))
                         )
         return 1, None
@@ -242,7 +238,7 @@ class TianHeWorker:
         _, user_yhq = self.yhq()
         self.used = user_yhq["NODES"].sum()
         user_yhi = dataframe_from_dict(
-            dict(zip(YHI_HEAD,
+            dict(zip(_YHI_HEAD,
                      ["USER", self.alloc, self.used, None, None]))
         )
         all_yhi = sys_yhi.append(user_yhi, ignore_index=True)
@@ -319,6 +315,10 @@ class TianHeNodes:
         return all(results)
 
 
+NPC = TianHeWorker(partition=CONDOR.get("ALLOW", "PARTITION"),
+                   total_allowed_node=CONDOR.getint("ALLOW", "TOTAL_NODE"))
+
+
 class TianHeJobManager:
     def __init__(self, structures_path: SPath, interval_time=0.5):
         self.structures_path = structures_path
@@ -337,18 +337,15 @@ class TianHeJobManager:
         jobs = []
         for job in job_dirs:
             jobs.append(["", "", job.get(), ""])
-        ALL_JOB_LOG.touch(ALL_JOB_HEAD, jobs)
+        ALL_JOB_LOG.touch(_ALL_JOB_HEAD, jobs)
 
         return True
 
     def submit(self):
         jobs = ALL_JOB_LOG.eval()
-        control = TianHeWorker(partition=CONDOR.get("ALLOW", "PARTITION"),
-                               total_allowed_node=CONDOR.getint("ALLOW", "TOTAL_NODE"))
-        control.flush()
+        NPC.flush()
         for job_workdir in jobs["WORKDIR"]:
             job_obj = TianHeJob()
-
 
 
 if __name__ == "__main__":

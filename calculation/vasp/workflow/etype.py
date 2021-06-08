@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import math
 from enum import Enum, unique
 from utils.spath import SPath
 from calculation.vasp.inputs import INCAR, KPOINTS, KPOINTSModes
+from utils.yhurm import TH_LOCAL, TianHeNodes, NPC, TianHeJob, ALL_JOB_LOG, RUNNING_JOB_LOG
+from utils.tools import LogCsv
+from config import WORKFLOW, CONDOR
+
+ERROR_JOB_HEAD = ["JOB_PATH", "ERROR_CODE", "ERROR_NAME"]
+ERROR_JOB_LOG = LogCsv(SPath(TH_LOCAL / "error_job.csv"))
 
 
 @unique
@@ -46,6 +53,9 @@ class Errors(Enum):
         27: "VERY BAD NEWS! internal error in subroutine SGRGEN: Too many elements",
         28: "VERY BAD NEWS! internal error in subroutine SGRCON: Found some non-integer element in rotation matrix"
     }
+    tips = {
+        29: "BRIONS problems: POTIM should be increased"
+    }
 
     @property
     def error_type(self):
@@ -58,63 +68,141 @@ class Errors(Enum):
 class ErrType:
     errorType = Errors
 
-    def __init__(self, running_dir: SPath):
+    def __init__(self, job_id, running_dir: SPath):
+        self.job_id = job_id
         self.running_root = running_dir
+        self.yh = self.running_root / "yh.log"
+        self._outcar = self.running_root / "OUTCAR"
+        self._incar = self.running_root / "INCAR"
+        self._oszicar = self.running_root / "OSZICAR"
+        self._contcar = self.running_root / "CONTCAR"
+        self._kpoints = self.running_root / "KPOINTS"
+        self._poscar = self.running_root / "POSCAR"
+        self._chgcar = self.running_root / "CHGCAR"
+
+    @property
+    def workflow_type(self):
+        return self.running_root.name
+
+    @property
+    def incar(self):
+        return INCAR.from_file(self._incar)
+
+    @property
+    def kpoints(self):
+        return KPOINTS.from_file(self._kpoints)
+
+    def update_incar(self, **kwargs):
+        for key, item in kwargs.items():
+            self.incar[key] = item
+
+    def update_kpoints(self, new_k_val=20, new_k_mesh=0.04):
+        if self.kpoints.style in [KPOINTSModes.Gamma, KPOINTSModes.Monkhorst]:
+            if not self._contcar.is_empty():
+                self.kpoints.get_kmesh(self._contcar, new_k_mesh)
+            else:
+                self.kpoints.get_kmesh(self._poscar, new_k_mesh)
+        if self.kpoints.style == KPOINTSModes.LineMode:
+            self.kpoints.nkpt = new_k_val
+
+        self.kpoints.write(self._kpoints)
+
+    def contcar2poscar(self):
+        self._contcar.copy_to(self._poscar)
+
+    def modify_potcar(self):
+        raise NotImplementedError
 
     @staticmethod
     def _match(target_file: SPath):
         for e in Errors:
-            for code, keyword in e.items():
+            for code, keyword in e.value.items():
                 for line in target_file.readline_text_reversed():
                     if keyword in line:
-                        yield str(e), code
+                        yield e, code
 
-    def match(self):
-        for log in ["yh.log", "OUTCAR", "OSZICAR"]:
-            yield self._match(
-                self.running_root / log
-            )
+    def _yield_error(self):
+        for log in [self.yh, self._outcar, self._oszicar]:
+            matched = self._match(self.running_root / log)
+            if matched is not None:
+                yield matched
 
-    def modify_incar(self, **kwargs):
-        incar_fp = self.running_root / "INCAR"
-        incar = INCAR.from_file(incar_fp)
-        for key, item in kwargs.items():
-            incar[key] = item
-
-        incar.write(incar_fp)
-
-    def modify_kpoints(self, new_k_val=20, new_k_mesh=0.04):
-        poscar_fp = self.running_root / "CONTCAR"
-        kpt_fp = self.running_root / "KPOINTS"
-        if poscar_fp.is_empty():
-            poscar_fp = self.running_root / "POSCAR"
-        kpt = KPOINTS.from_file(kpt_fp)
-        if kpt.style in [KPOINTSModes.Gamma, KPOINTSModes.Monkhorst]:
-            kpt.get_kmesh(poscar_fp, new_k_mesh)
-        if kpt.style == KPOINTSModes.LineMode:
-            kpt.nkpt = new_k_val
-
-        kpt.write(kpt_fp)
-
-    def update_poscar(self):
-        contcar = self.running_root / "CONTCAR"
-        poscar = self.running_root / "POSCAR"
-        contcar.copy_to(poscar)
-
-    def modify_potcar(self):
-        pass
-
-    def _reaction(self, error_code):
-        pass
-
-    def modify_input_based_on_error(self, error):
-        while True:
+    def reaction(self, err_type, err_code):
+        if err_code == 1:
+            print(f"error type: {err_type.value}, update POSCAR...")
+            self.contcar2poscar()
+        if err_code in (2, 3, 4, 5, 6, 7, 8):
+            NPC.flush()
+            if RUNNING_JOB_LOG.is_contain("JOBID", self.job_id):
+                job_nodes = TianHeNodes(self.job_id)
+                try:
+                    job_nodes.kill_zombie_process_on_nodes(key_word=CONDOR["VASP"]["VASP_EXE"])
+                except:
+                    job = TianHeJob(job_id=self.job_id)
+                    job.yhcancel()
+                    RUNNING_JOB_LOG.drop_one("JOBID", self.job_id)
+                    ALL_JOB_LOG.update_one("JOBID", self.job_id, "RESULT", "Failed")
+        if err_code in (9, 10, 11):
+            print(f"error type: {err_type.value}, "
+                  f"High probability is a problem of parallel parameter setting ...")
+            nnode = WORKFLOW[self.workflow_type]["node"]
+            ncore = WORKFLOW[self.workflow_type]["core"]
+            core_per_node = int(ncore / nnode)
+            npar = int(math.sqrt(core_per_node))
             try:
-                if self.match():
-                    for error in self.match():
-                        self._reaction(error)
-            except StopIteration:
-                break
+                if self.incar["NPAR"] is not None:
+                    if self.incar["NPAR"] == npar:
+                        print(f"Oh, I have no idea about this...")
+                else:
+                    self.incar["NCORE"] = core_per_node
+                    self.incar["NPAR"] = npar
+            except (KeyError, TypeError):
+                pass
+            else:
+                self.incar.write(self._incar)
+        if err_code in (12, 13):
+            if self._chgcar.exists():
+                self._chgcar.rm_file()
+            ialgo = self.incar["IALGO"]
+            if ialgo is not None:
+                if ialgo == 38:
+                    self.incar["IALGO"] = 48
+                if ialgo == 48:
+                    self.incar["IALGO"] = 38
+            else:
+                algo = self.incar["ALGO"]
+                if algo == "Normal":
+                    self.incar["ALGO"] = "Fast"
+                elif algo == "Fast":
+                    self.incar["ALGO"] = "Very_Fast"
+                else:
+                    self.incar["ALGO"] = "Normal"
+            self.incar.write(self._incar)
+        if err_code == 14:
+            self.incar["ISYM"] = 0
+            self.incar.write(self._incar)
+        if err_code == 15:
+            self.contcar2poscar()
+        if err_code == 16:
+            pass
+        if err_code == 29:
+            print(f"error type: {err_type.value}, trying to increase INCAR POTIM para...")
+            try:
+                if self.incar["POTIM"] <= 0.1:
+                    self.incar["POTIM"] = 0.5
+                else:
+                    self.incar["POTIM"] += 0.2
+            except (KeyError, TypeError):
+                self.incar["POTIM"] = 0.5
+            finally:
+                self.incar.write(self._incar)
+
+    def automatic_error_correction(self):
+        for x in self._yield_error():
+            xl = list(x)
+            if xl:
+                for err_type, err_code in xl:
+                    self.reaction(err_type, err_code)
 
 
 if __name__ == '__main__':
