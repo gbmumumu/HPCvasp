@@ -177,6 +177,8 @@ class ErrType:
                     self.incar["ALGO"] = "Very_Fast"
                 else:
                     self.incar["ALGO"] = "Normal"
+            if not self._contcar.is_empty():
+                self.contcar2poscar()
             self.incar.write(self._incar)
         if err_code == 14:
             self.incar["ISYM"] = 0
@@ -184,7 +186,10 @@ class ErrType:
         if err_code == 15:
             self.contcar2poscar()
         if err_code == 16:
+            print("")
+        if err_code == 17:
             pass
+
         if err_code == 29:
             print(f"error type: {err_type.value}, trying to increase INCAR POTIM para...")
             try:
