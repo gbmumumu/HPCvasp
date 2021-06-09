@@ -11,18 +11,15 @@ from utils.spath import SPath
 
 
 @click.command()
-def is_converge(work_dir):
-    return VaspRunningJob(work_dir).is_converge()
+@click.option("--work_dir", help="work directory")
+def converge(work_dir):
+    return VaspRunningJob(SPath(work_dir)).is_converge()
 
 
 @click.command()
-def is_finish(work_dir):
-    return VaspRunningJob(work_dir).is_finish()
-
-
-@click.command()
-def is_spin(work_dir):
-    return VaspRunningJob(work_dir).is_spin()
+@click.option("--work_dir", help="work directory")
+def spin(work_dir):
+    return VaspRunningJob(SPath(work_dir)).is_spin()
 
 
 @click.command()
@@ -40,12 +37,12 @@ def prepare_job(work_dir, job_type):
     return VaspRunningJob(work_dir).prepare_job(job_type)
 
 
-if __name__ == '__main__':
-    t = SPath(r"./test/calc/icsd_170660-Ta4Ga1Se8/Relax")
-    incar = t / "INCAR"
-    kpoints = t / "KPOINTS"
-    poscar = t / "POSCAR"
+@click.group()
+def main():
+    pass
 
-    e = ErrType(t)
-    # e.update_inputs()
-    print(e.workflow_type)
+
+if __name__ == '__main__':
+    main.add_command(converge)
+    main.add_command(spin)
+    main()

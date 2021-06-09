@@ -19,7 +19,7 @@ class OSZICAR:
 
     def read(self):
         steps, idx = [], 1
-        regex = re.compile(r"(\d+\s|-?.?\d+.?E?[+|-]?\d+)")
+        regex = re.compile(r"(\d+\s|-?\d*.?\d+[E]?[+|-]?\d+)")
         for line in self.oszicar.readline_text():
             if "F=" in line:
                 p = regex.findall(line)
@@ -30,7 +30,6 @@ class OSZICAR:
                         idx: dict(zip(h, p))
                     }
                 )
-
         return steps
 
     @property

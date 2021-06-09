@@ -9,7 +9,7 @@ from utils.yhurm import TH_LOCAL, TianHeNodes, NPC, TianHeJob, ALL_JOB_LOG, RUNN
 from utils.tools import LogCsv
 from config import WORKFLOW, CONDOR
 
-ERROR_JOB_HEAD = ["JOB_PATH", "ERROR_CODE", "ERROR_NAME"]
+_ERROR_JOB_HEAD = ["JOB_PATH", "ERROR_CODE", "ERROR_NAME"]
 ERROR_JOB_LOG = LogCsv(SPath(TH_LOCAL / "error_job.csv"))
 
 
