@@ -79,6 +79,7 @@ class ErrType:
         self._kpoints = self.running_root / "KPOINTS"
         self._poscar = self.running_root / "POSCAR"
         self._chgcar = self.running_root / "CHGCAR"
+        self._wavecar = self.running_root / "WAVECAR"
 
     @property
     def workflow_type(self):
@@ -131,7 +132,9 @@ class ErrType:
         if err_code == 1:
             print(f"error type: {err_type.value}, update POSCAR...")
             self.contcar2poscar()
-        if err_code in (2, 3, 4, 5, 6, 7, 8):
+        if err_code in (2, 3, 4, 5, 6, 7, 8, 16, 17, 19, 20, 22, 24, 27):
+            print(f"error type: {err_type.value}, "
+                  f"need to be resolved manually, check inputs setting!")
             NPC.flush()
             if RUNNING_JOB_LOG.is_contain("JOBID", self.job_id):
                 job_nodes = TianHeNodes(self.job_id)
@@ -160,7 +163,7 @@ class ErrType:
                 pass
             else:
                 self.incar.write(self._incar)
-        if err_code in (12, 13):
+        if err_code in (12, 13, 25):
             if self._chgcar.exists():
                 self._chgcar.rm_file()
             ialgo = self.incar["IALGO"]
@@ -185,11 +188,34 @@ class ErrType:
             self.incar.write(self._incar)
         if err_code == 15:
             self.contcar2poscar()
-        if err_code == 16:
-            print("")
-        if err_code == 17:
-            pass
-
+        if err_code == 18:
+            ediff = self.incar["EDIFF"]
+            assert abs(ediff) < 0.01
+            self.incar["EDIFF"] *= 10
+            self.incar.write(self._incar)
+        if err_code == 21:
+            print(f"error type: {err_type.value}, "
+                  f"adjust kpoints setting ...")
+            if self.kpoints.style in (KPOINTSModes.Gamma, KPOINTSModes.Monkhorst):
+                self.kpoints.get_kmesh(self._poscar, 0.04)
+            if self.kpoints.style == KPOINTSModes.LineMode:
+                self.kpoints.get_hk_path(self._poscar, 40)
+            self.kpoints.write(self._kpoints)
+        if err_code == 23:
+            self._wavecar.rm_file()
+        if err_code == 24:
+            self._wavecar.rm_file()
+            self._chgcar.rm_file()
+            self.incar["POTIM"] //= 2
+            self.incar.write(self._incar)
+        if err_code == 26:
+            self.incar["ALGO"] = "Normal"
+            self.incar.write(self._incar)
+        if err_code == 28:
+            symprec = self.incar["SYMPREC"]
+            assert symprec <= float(1E-4)
+            self.incar["SYMPREC"] *= 10
+            self.incar.write(self._incar)
         if err_code == 29:
             print(f"error type: {err_type.value}, trying to increase INCAR POTIM para...")
             try:
