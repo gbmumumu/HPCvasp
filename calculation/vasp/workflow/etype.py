@@ -124,15 +124,18 @@ class ErrType:
 
     def _yield_error(self):
         for log in [self.yh, self._outcar, self._oszicar]:
-            matched = self._match(self.running_root / log)
-            if matched is not None:
-                yield matched
+            try:
+                matched = self._match(log)
+                if matched is not None:
+                    yield matched
+            except FileNotFoundError:
+                continue
 
     def reaction(self, err_type, err_code):
         if err_code == 1:
             print(f"error type: {err_type.value}, update POSCAR...")
             self.contcar2poscar()
-        if err_code in (2, 3, 4, 5, 6, 7, 8, 16, 17, 19, 20, 22, 24, 27):
+        elif err_code in (2, 3, 4, 5, 6, 7, 8, 16, 17, 19, 20, 22, 24, 27):
             print(f"error type: {err_type.value}, "
                   f"need to be resolved manually, check inputs setting!")
             NPC.flush()
@@ -145,7 +148,7 @@ class ErrType:
                     job.yhcancel()
                     RUNNING_JOB_LOG.drop_one("JOBID", self.job_id)
                     ALL_JOB_LOG.update_one("JOBID", self.job_id, "RESULT", "Failed")
-        if err_code in (9, 10, 11):
+        elif err_code in (9, 10, 11):
             print(f"error type: {err_type.value}, "
                   f"High probability is a problem of parallel parameter setting ...")
             nnode = WORKFLOW[self.workflow_type]["node"]
@@ -163,7 +166,7 @@ class ErrType:
                 pass
             else:
                 self.incar.write(self._incar)
-        if err_code in (12, 13, 25):
+        elif err_code in (12, 13, 25):
             if self._chgcar.exists():
                 self._chgcar.rm_file()
             ialgo = self.incar["IALGO"]
@@ -183,17 +186,17 @@ class ErrType:
             if not self._contcar.is_empty():
                 self.contcar2poscar()
             self.incar.write(self._incar)
-        if err_code == 14:
+        elif err_code == 14:
             self.incar["ISYM"] = 0
             self.incar.write(self._incar)
-        if err_code == 15:
+        elif err_code == 15:
             self.contcar2poscar()
-        if err_code == 18:
+        elif err_code == 18:
             ediff = self.incar["EDIFF"]
             assert abs(ediff) < 0.01
             self.incar["EDIFF"] *= 10
             self.incar.write(self._incar)
-        if err_code == 21:
+        elif err_code == 21:
             print(f"error type: {err_type.value}, "
                   f"adjust kpoints setting ...")
             if self.kpoints.style in (KPOINTSModes.Gamma, KPOINTSModes.Monkhorst):
@@ -201,22 +204,22 @@ class ErrType:
             if self.kpoints.style == KPOINTSModes.LineMode:
                 self.kpoints.get_hk_path(self._poscar, 40)
             self.kpoints.write(self._kpoints)
-        if err_code == 23:
+        elif err_code == 23:
             self._wavecar.rm_file()
-        if err_code == 24:
+        elif err_code == 24:
             self._wavecar.rm_file()
             self._chgcar.rm_file()
             self.incar["POTIM"] //= 2
             self.incar.write(self._incar)
-        if err_code == 26:
+        elif err_code == 26:
             self.incar["ALGO"] = "Normal"
             self.incar.write(self._incar)
-        if err_code == 28:
+        elif err_code == 28:
             symprec = self.incar["SYMPREC"]
             assert symprec <= float(1E-4)
             self.incar["SYMPREC"] *= 10
             self.incar.write(self._incar)
-        if err_code == 29:
+        elif err_code == 29:
             print(f"error type: {err_type.value}, trying to increase INCAR POTIM para...")
             try:
                 if self.incar["POTIM"] <= 0.1:
@@ -229,11 +232,18 @@ class ErrType:
                 self.incar.write(self._incar)
 
     def automatic_error_correction(self):
+        el = False
         for x in self._yield_error():
             xl = list(x)
             if xl:
+                el = True
                 for err_type, err_code in xl:
                     self.reaction(err_type, err_code)
+        if not el:
+            print("error does not exists !")
+
+    def get_error_from(self, log):
+        return self._match(log)
 
 
 if __name__ == '__main__':

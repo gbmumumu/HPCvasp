@@ -4,13 +4,10 @@
 
 from config import WORKFLOW, CONDOR, PACKAGE_ROOT
 from utils.spath import SPath
-from calculation.vasp.outputs import OUTCAR, OSZICAR
-from calculation.vasp.inputs import INCAR, KPOINTS, POSCAR, POTCAR
-from calculation.vasp.workflow import ErrType
 
 
 class WorkflowParser:
-    def __init__(self,  work_root: SPath, comment=None, source=None,
+    def __init__(self, work_root: SPath, comment=None, source=None,
                  modules=None, workflow=None, prog=None):
         self.work_root = work_root
         if comment is None:
@@ -63,7 +60,7 @@ class WorkflowParser:
         flow += f"  {self.yhrun_prog(node, core)} > yh.log\n"
         flow += f"  if [ $? -eq 0 ]; then\n"
         flow += f"    echo \'calc success\'\n"
-        flow += f"    python {self._py} --work_dir\n" # 检查是否收敛, 没有则根据错误信息自动调整参数
+        flow += f"    python {self._py} --work_dir\n"  # 检查是否收敛, 没有则根据错误信息自动调整参数
         flow += f"    if [ -f \"{converge_txt}\" ];then\n"
         flow += f"      break\n"
         flow += f"    fi\n"
@@ -72,49 +69,6 @@ class WorkflowParser:
         flow += f"  \n"
 
         flow += f"  "
-
-
-class VaspRunningJob:
-    def __init__(self, calc_dir: SPath):
-        self.calc_dir = calc_dir
-        self.poscar = self.calc_dir / "POSCAR"
-        self.contcar = self.calc_dir / "CONTCAR"
-        self.incar = self.calc_dir / "INCAR"
-        self.kpoints = self.calc_dir / "KPOINTS"
-        self.outcar = self.calc_dir / "OUTCAR"
-        self.oszicar = self.calc_dir / "OSZICAR"
-        self.incar = self.calc_dir / "INCAR"
-
-    def is_spin(self):
-        oszicar = self.calc_dir / "OSZICAR"
-        final_mag = OSZICAR(oszicar).final_mag
-        if final_mag is not None:
-            if abs(final_mag) > 0.004:
-                is_spin = self.calc_dir / "is_spin.txt"
-                is_spin.write_text(str(final_mag))
-                return True
-        return False
-
-    def is_converge(self):
-        result = OUTCAR(self.outcar)
-        if result.finished():
-            if result.converged() or INCAR.from_file(self.incar).get("ISIF") != 3:
-                converge = self.calc_dir / "converge.txt"
-                converge.touch()
-                return True
-        return False
-
-    def is_finish(self):
-        return OUTCAR(self.outcar).finished()
-
-    def check_errors(self):
-        pass
-
-    def process_errors(self):
-        pass
-
-    def prepare_job(self, job_type):
-        pass
 
 
 if __name__ == '__main__':
