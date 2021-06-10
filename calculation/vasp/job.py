@@ -5,6 +5,7 @@ import re
 from calculation.vasp.outputs import OUTCAR, OSZICAR
 from calculation.vasp.inputs import INCAR, KPOINTS, POSCAR, POTCAR
 from calculation.vasp.workflow import ErrType
+from config import WORKFLOW, CONDOR
 from utils.spath import SPath
 from utils.yhurm import RUNNING_JOB_LOG
 
@@ -12,13 +13,14 @@ from utils.yhurm import RUNNING_JOB_LOG
 class VaspRunningJob:
     def __init__(self, calc_dir: SPath):
         self.calc_dir = calc_dir
-        self.poscar = self.calc_dir / "POSCAR"
-        self.contcar = self.calc_dir / "CONTCAR"
-        self.incar = self.calc_dir / "INCAR"
-        self.kpoints = self.calc_dir / "KPOINTS"
-        self.outcar = self.calc_dir / "OUTCAR"
-        self.oszicar = self.calc_dir / "OSZICAR"
-        self.incar = self.calc_dir / "INCAR"
+        self._poscar = self.calc_dir / "POSCAR"
+        self._contcar = self.calc_dir / "CONTCAR"
+        self._incar = self.calc_dir / "INCAR"
+        self._kpoints = self.calc_dir / "KPOINTS"
+        self._outcar = self.calc_dir / "OUTCAR"
+        self._oszicar = self.calc_dir / "OSZICAR"
+        self._incar = self.calc_dir / "INCAR"
+        self._potcar = self.calc_dir / "POTCAR"
 
     def is_spin(self):
         oszicar = self.calc_dir / "OSZICAR"
@@ -31,16 +33,16 @@ class VaspRunningJob:
         return False
 
     def is_converge(self):
-        result = OUTCAR(self.outcar)
+        result = OUTCAR(self._outcar)
         if result.finished():
-            if result.converged() or INCAR.from_file(self.incar).get("ISIF") != 3:
+            if result.converged() or INCAR.from_file(self._incar).get("ISIF") != 3:
                 converge = self.calc_dir / "converge.txt"
                 converge.touch()
                 return True
         return False
 
     def is_finish(self):
-        return OUTCAR(self.outcar).finished()
+        return OUTCAR(self._outcar).finished()
 
     @property
     def job_id(self):
@@ -72,10 +74,36 @@ class VaspRunningJob:
 
     def get_errors(self, error_log):
         e = ErrType(job_id=self.job_id, running_dir=self.calc_dir)
-        errors = e.get_error_from(self.calc_dir / error_log)
-        if errors is None:
+        errors = list(e.get_error_from(self.calc_dir / error_log))
+        if not errors:
             print(f"error not found from {error_log}")
+        for item, _ in errors:
+            print(f"error type: {item.value}")
         return errors
+
+    def get_inputs_file(self, job_type):
+        job_info = WORKFLOW[job_type]
+        last_job = job_info.get("parent")
+        if last_job is not None:
+            last_job_files = job_info.get("parent_files")
+            if last_job_files:
+                for filename in last_job_files:
+                    file = self.calc_dir.parent / last_job / filename
+                    file.copy_to(self.calc_dir)
+
+        else:
+            sfx = CONDOR.get("STRU", "SUFFIX")
+            for _poscar in self.calc_dir.parent.walk(pattern=f"*{sfx}"):
+                _poscar.copy_to(self.calc_dir / "POSCAR")
+
+        assert self._poscar.exists()
+        if not self._potcar.exists():
+            potcar_lib = CONDOR.get("VASP", "PSEUDO_POTENTIAL_DIR")
+            if not SPath(potcar_lib).exists():
+                raise FileNotFoundError("POTCAR Source not found!")
+            stru = POSCAR.from_file(self._poscar)
+            POTCAR(lib=potcar_lib).cat(stru, self._potcar)
+
 
 
 if __name__ == '__main__':

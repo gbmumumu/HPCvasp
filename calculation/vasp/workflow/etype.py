@@ -16,7 +16,7 @@ ERROR_JOB_LOG = LogCsv(SPath(TH_LOCAL / "error_job.csv"))
 @unique
 class Errors(Enum):
     calc_error = {
-        1: "ZBRENT: fatal error in bracketing please rerun with smaller EDIFF, or copy CONTCAR to POSCAR and continue"
+        1: "please rerun with smaller EDIFF"
     }
     odd_behavior = {
         2: "internal ERROR RSPHER:running out of buffer",

@@ -509,3 +509,6 @@ DAV:   6    -0.399639489350E+02   -0.24758E-06   -0.10129E-06  6384   0.483E-03
  ZBRENT: can't locate minimum, use default step
  trial-energy change:   -0.000576  1 .order   -0.000624   -0.000638   -0.000610
  step:   0.1008(harm=  0.5801)  dis= 0.00693  next Energy=   -39.970712 (dE=-0.734E-02)
+ ZBRENT: fatal error in bracketing
+     please rerun with smaller EDIFF, or copy CONTCAR
+     to POSCAR and continue

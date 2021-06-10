@@ -2,12 +2,14 @@
   "Test_spin": {
     "node": 1,
     "core": 24,
-    "try_num": 2
+    "try_num": 2,
+    "kpt": ["G", 0.06]
   },
   "Relax": {
     "node": 1,
     "core": 24,
     "try_num": 5,
+    "kpt": ["M", 0.04, 0.02],
     "parent": "Test_spin",
     "parent_files": ["POTCAR", "POSCAR"]
   },
@@ -15,6 +17,7 @@
     "node": 1,
     "core": 24,
     "try_num": 2,
+    "kpt": ["M", 0.02],
     "parent": "Relax",
     "parent_files": ["POTCAR", "CONTCAR"]
   },
@@ -22,6 +25,7 @@
     "node": 1,
     "core": 24,
     "try_num": 2,
+    "kpt": ["L", 40],
     "parent": "Scf",
     "parent_files": ["POTCAR", "CONTCAR", "CHGCAR", "CHG", "WAVECAR"]
   },
@@ -29,6 +33,7 @@
     "node": 1,
     "core": 24,
     "try_num": 2,
+    "kpt": ["M", 0.02],
     "parent": "Scf",
     "parent_files": ["POTCAR", "CONTCAR", "CHGCAR", "CHG", "WAVECAR"]
   }
