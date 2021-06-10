@@ -23,6 +23,7 @@ def spin(work_dir):
 
 
 @click.command()
+@click.option("--work_dir", help="work directory")
 def check_errors(work_dir):
     return VaspRunningJob(work_dir).check_errors()
 

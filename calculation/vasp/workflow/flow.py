@@ -6,6 +6,7 @@ from config import WORKFLOW, CONDOR, PACKAGE_ROOT
 from utils.spath import SPath
 from calculation.vasp.outputs import OUTCAR, OSZICAR
 from calculation.vasp.inputs import INCAR, KPOINTS, POSCAR, POTCAR
+from calculation.vasp.workflow import ErrType
 
 
 class WorkflowParser:
