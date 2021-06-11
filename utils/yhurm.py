@@ -324,7 +324,7 @@ class TianHeJobManager:
         self.structures_path = structures_path
         self.interval_time = interval_time
 
-    def init_jobs(self, pat="*.poscar", mv_org=True):
+    def init_jobs(self, pat=f"{CONDOR.get('STRU', 'SUFFIX')}", mv_org=True):
         job_pool = Pool(12)
 
         job_dirs = []

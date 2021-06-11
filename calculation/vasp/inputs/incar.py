@@ -85,9 +85,9 @@ class INCAR:
             return val
 
     def write(self, incar: SPath):
-        if not incar.is_empty():
-            incar.copy_to(des=incar.parent / "INCAR_step_0")
-        incar.rm_file()
+        if incar.exists():
+            if not incar.is_empty():
+                incar.copy_to(des=incar.parent / "INCAR_step_0", mv_org=True)
         for key, val in self.paras.items():
             incar.add_to_text(
                 f"{key} = {self._make_string(key, val)}"

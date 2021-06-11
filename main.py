@@ -2,10 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import click
+from multiprocessing.pool import Pool
 
 from calculation.vasp.job import VaspRunningJob
-from calculation.vasp.inputs import INCAR, POSCAR, KPOINTS, KPOINTSModes
-from calculation.vasp.workflow.etype import ErrType
 from utils.yhurm import TianHeJob, TianHeTime, TianHeWorker, TianHeNodes, TianHeJobManager
 from utils.spath import SPath
 

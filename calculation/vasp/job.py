@@ -3,11 +3,12 @@
 import re
 
 from calculation.vasp.outputs import OUTCAR, OSZICAR
-from calculation.vasp.inputs import INCAR, KPOINTS, POSCAR, POTCAR
+from calculation.vasp.inputs import INCAR, KPOINTS, POSCAR, POTCAR, KPOINTSModes
 from calculation.vasp.workflow import ErrType
-from config import WORKFLOW, CONDOR
+from config import WORKFLOW, CONDOR, INCAR_TEMPLATE
 from utils.spath import SPath
 from utils.yhurm import RUNNING_JOB_LOG
+from utils.tools import smart_fmt
 
 
 class VaspRunningJob:
@@ -84,26 +85,60 @@ class VaspRunningJob:
     def get_inputs_file(self, job_type):
         job_info = WORKFLOW[job_type]
         last_job = job_info.get("parent")
+        incar_paras = INCAR_TEMPLATE.get(job_type)
+        assert incar_paras is not None
+        incar = INCAR(**incar_paras)
         if last_job is not None:
+            last_job_path = self.calc_dir.parent / last_job
             last_job_files = job_info.get("parent_files")
+            spin_txt = last_job_path / "is_spin.txt"
+            if spin_txt.exists():
+                incar["ISPIN"] = 2
+                spin_txt.copy_to(self.calc_dir)
             if last_job_files:
                 for filename in last_job_files:
-                    file = self.calc_dir.parent / last_job / filename
-                    file.copy_to(self.calc_dir)
-
+                    file = last_job_path / filename
+                    if filename == "CONTCAR":
+                        file.copy_to(self.calc_dir / "POSCAR")
+                    else:
+                        file.copy_to(self.calc_dir)
         else:
+            incar["ISPIN"] = 2
             sfx = CONDOR.get("STRU", "SUFFIX")
             for _poscar in self.calc_dir.parent.walk(pattern=f"*{sfx}"):
                 _poscar.copy_to(self.calc_dir / "POSCAR")
-
+        incar.write(self._incar)
         assert self._poscar.exists()
+        stru = POSCAR.from_file(self._poscar)
         if not self._potcar.exists():
             potcar_lib = CONDOR.get("VASP", "PSEUDO_POTENTIAL_DIR")
             if not SPath(potcar_lib).exists():
                 raise FileNotFoundError("POTCAR Source not found!")
-            stru = POSCAR.from_file(self._poscar)
             POTCAR(lib=potcar_lib).cat(stru, self._potcar)
-
+        kpt_type, *kpt_paras = job_info.get("kpt")
+        try_num = job_info.get("try_num")
+        if try_num is None:
+            try_num = 2
+        if len(kpt_paras) < try_num:
+            kpt_paras.extend([kpt_paras[-1], ] * (try_num - len(kpt_paras)))
+        else:
+            kpt_paras = kpt_paras[:try_num]
+        run_time_txt = self.calc_dir / "running"
+        if not run_time_txt.exists():
+            run_time_txt.write_text(data=f"{1}")
+            kpt_para = kpt_paras[0]
+        else:
+            run_time = smart_fmt(run_time_txt.read_text())
+            kpt_para = kpt_paras[run_time]
+            run_time_txt.write_text(data=f"{run_time + 1}")
+        kpt_style = KPOINTSModes.from_string(kpt_type)
+        if kpt_style == KPOINTSModes.LineMode:
+            kpoints = KPOINTS(interval_of_kpoints=kpt_para, style=kpt_style)
+            kpoints.get_hk_path(stru)
+        else:
+            kpoints = KPOINTS(style=kpt_style)
+            kpoints.get_kmesh(stru, kpt_para)
+        kpoints.write(self._kpoints)
 
 
 if __name__ == '__main__':

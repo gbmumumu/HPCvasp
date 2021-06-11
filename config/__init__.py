@@ -13,6 +13,11 @@ CONDOR = _condor.read_ini()
 WORKFLOW = _workflow.read_json()
 PACKAGE_ROOT = _config_root.parent
 RUNNING_DIR = PACKAGE_ROOT / "CALC"
-
+INCAR_TEMPLATE = {}
+_temp = _config_root / "template"
+for template in _temp.walk(pattern="*.yaml"):
+    INCAR_TEMPLATE.update(
+        {template.name.replace(".yaml", ""): template.read_yaml()}
+    )
 if __name__ == '__main__':
     pass

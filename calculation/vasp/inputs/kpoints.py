@@ -130,9 +130,9 @@ class KPOINTS:
         self.labels = lbs
 
     def write(self, kpoints: SPath):
-        if not kpoints.is_empty():
-            kpoints.copy_to(des=kpoints.parent / "KPOINTS_step_0")
-        kpoints.rm_file()
+        if kpoints.exists():
+            if not kpoints.is_empty():
+                kpoints.copy_to(des=kpoints.parent / "KPOINTS_step_0", mv_org=True)
         kpoints.write_text(str(self))
 
     def __str__(self):

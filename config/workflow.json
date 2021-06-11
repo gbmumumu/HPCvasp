@@ -2,8 +2,8 @@
   "Test_spin": {
     "node": 1,
     "core": 24,
-    "try_num": 2,
-    "kpt": ["G", 0.06]
+    "try_num": 3,
+    "kpt": ["L", 0.06, 40, 0.02]
   },
   "Relax": {
     "node": 1,

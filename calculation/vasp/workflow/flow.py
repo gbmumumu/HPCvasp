@@ -32,7 +32,6 @@ class WorkflowParser:
         flow = ''
         task_dir = self.work_root / job_name
         converge_txt = task_dir / "converge.txt"
-        spin_txt = task_dir / "is_spin.txt"
         flow += f"echo \'start {job_name} task\'"
         flow += f"mkdir {job_name} && cd {job_name}\n"
         node = job_paras.get("node")
@@ -42,33 +41,34 @@ class WorkflowParser:
             core = 24
         if core is None:
             core = 24 * node
-        try_keyword = "try_num"
-        try_num = job_paras.get(try_keyword)
+        try_num = job_paras.get("try_num")
         if try_num is None:
             try_num = 1
-        parent = job_paras.get("parent")
         flow += f"echo \'prepare {job_name} inputs.\'"
-        if parent is not None:
-            flow += f"if [ -a {spin_txt}]; then\n"
-            flow += f"  cp {spin_txt} ./"
-            flow += f"fi"
-        # 根据是否存在父任务及父任务结果准备输入文件
-        flow += f"python {self._py} "
-        flow += f"for ((try_num=0;try_num<={try_num};try_num++))\n"
+        flow += f"python {self._py} get-inputs --work_dir {task_dir} --job_type {job_name}"
+        flow += f"for ((try_num=1;try_num<={try_num};try_num++))\n"
         flow += "  do\n"
         flow += f"  echo \' round: {try_num} on {node} node {core} core\'"
         flow += f"  {self.yhrun_prog(node, core)} > yh.log\n"
         flow += f"  if [ $? -eq 0 ]; then\n"
-        flow += f"    echo \'calc success\'\n"
-        flow += f"    python {self._py} --work_dir\n"  # 检查是否收敛, 没有则根据错误信息自动调整参数
+        flow += f"    echo \'calc step: {try_num} completed!\'\n"
+        flow += f"    echo \'check calculation result...\'\n"
+        flow += f"    python {self._py} errors --work_dir {task_dir}\n"
+        flow += f"    python {self._py} converge --work_dir {task_dir}\n"
         flow += f"    if [ -f \"{converge_txt}\" ];then\n"
         flow += f"      break\n"
         flow += f"    fi\n"
+        flow += f"  else"
+        flow += f"    echo \'yhrun command failed! check errors\'"
+        flow += f"    python {self._py} errors --work_dir {task_dir}\n"
         flow += f"  fi\n"
-        flow += f"  echo \'calc failed!\'\n"
-        flow += f"  \n"
-
-        flow += f"  "
+        flow += f"  echo \'calculation not done, prepare to next loop\'\n"
+        flow += f"  python {self._py} get-inputs {task_dir}"
+        flow += f"if [ ! -f \"{converge_txt}\" ];then\n"
+        flow += f"  echo \'The job in the specified setting is not completed, " \
+                f"       and the subsequent tasks will not be performed\' \n"
+        flow += f"  exit"
+        flow += f"fi"
 
 
 if __name__ == '__main__':

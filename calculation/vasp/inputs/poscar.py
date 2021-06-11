@@ -209,7 +209,7 @@ class POSCAR:
         for _ in range(nt):
             coords.append(
                 np.asarray(
-                    next(file).split(), dtype=float
+                    next(file).split()[:3], dtype=float
                 )
             )
         coords = np.asarray(coords)
