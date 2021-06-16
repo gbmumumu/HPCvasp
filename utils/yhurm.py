@@ -20,7 +20,7 @@ RUNNING_JOB_LOG = LogCsv(SPath(TH_LOCAL / "running_job.csv"))
 HPC_LOG = LogCsv(SPath(TH_LOCAL / "hpc.csv"))
 TEMP_FILE = SPath(TH_LOCAL / "tmp.txt")
 ALL_JOB_LOG = LogCsv(SPath(TH_LOCAL / "all_job.csv"))
-_ALL_JOB_HEAD = ["JOBID", "ST", "WORKDIR", "RESULT"]
+_ALL_JOB_HEAD = ["JOBID", "ST", "WORKDIR", "BASH", "RESULT"]
 
 
 class TianHeTime:
@@ -329,7 +329,7 @@ class TianHeJobManager:
     def _init(name: SPath, *args, **kwargs):
         filename_dir = name.mkdir_filename()
         name.copy_to(filename_dir, mv_org=True)
-        return WorkflowParser(work_root=filename_dir, *args, **kwargs).get()
+        return WorkflowParser(work_root=filename_dir, *args, **kwargs).write_sh()
 
     def init_jobs(self, pat, n=4):
         job_pool = Pool(n)
@@ -342,7 +342,8 @@ class TianHeJobManager:
         job_pool.join()
         jobs = []
         for job in job_dirs:
-            jobs.append(["", "", job.get(), "PD"])
+            root, bash_name = job.get()
+            jobs.append(["", "PD", root, bash_name, ""])
         try:
             ALL_JOB_LOG.touch(_ALL_JOB_HEAD, jobs)
         except AttributeError:

@@ -37,8 +37,8 @@ class WorkflowParser:
         flow = ''
         task_dir = self.work_root / job_name
         converge_txt = task_dir / "converge.txt"
-        flow += f"echo \'start {job_name} task\'"
-        flow += f"mkdir {job_name} && cd {job_name}\n"
+        flow += f"echo \'start {job_name} task\'\n"
+        flow += f"mkdir {job_name} && cd {job_name} || exit\n"
         node = job_paras.get("node")
         core = job_paras.get("core")
         if node is None:
@@ -49,8 +49,8 @@ class WorkflowParser:
         try_num = job_paras.get("try_num")
         if try_num is None:
             try_num = 1
-        flow += f"echo \'prepare {job_name} inputs.\'"
-        flow += f"python {self._py} get-inputs --work_dir {task_dir} --job_type {job_name}"
+        flow += f"echo \'prepare {job_name} inputs.\'\n"
+        flow += f"python {self._py} get-inputs --work_dir {task_dir} --job_type {job_name}\n"
         flow += f"for ((try_num=1;try_num<={try_num};try_num++))\n"
         flow += "  do\n"
         flow += f"  echo \' round: {try_num} on {node} node {core} core\'"
@@ -63,20 +63,22 @@ class WorkflowParser:
         flow += f"    if [ -f \"{converge_txt}\" ];then\n"
         flow += f"      break\n"
         flow += f"    fi\n"
-        flow += f"  else"
-        flow += f"    echo \'yhrun command failed! check errors\'"
+        flow += f"  else\n"
+        flow += f"    echo \'yhrun command failed! check errors\'\n"
         flow += f"    python {self._py} errors --work_dir {task_dir}\n"
         flow += f"  fi\n"
         flow += f"  echo \'calculation not done, prepare to next loop\'\n"
-        flow += f"  python {self._py} get-inputs {task_dir}"
+        flow += f"  python {self._py} get-inputs {task_dir}\n"
+        flow += f"done\n"
         flow += f"if [ ! -f \"{converge_txt}\" ];then\n"
         flow += f"  echo \'The job in the specified setting is not completed, " \
                 f"       and the subsequent tasks will not be performed\' \n"
-        flow += f"  exit"
-        flow += f"fi"
+        flow += f"  exit\n"
+        flow += f"fi\n"
+
         return flow
 
-    def get(self):
+    def _get(self):
         b = ''
         b += f"{self.comment}\n"
         b += f"{self.source}\n"
@@ -84,7 +86,13 @@ class WorkflowParser:
 
         for step, paras in self.yield_job():
             b += self.parser(step, paras)
-        print(b)
+        return b
+
+    def write_sh(self):
+        filename = self.work_root.name + ".sh"
+        sh_path = self.work_root / filename
+        sh_path.write_text(self._get())
+        return self.work_root, filename
 
 
 if __name__ == '__main__':
