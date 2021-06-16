@@ -324,12 +324,11 @@ class TianHeJobManager:
         self.structures_path = structures_path
         self.interval_time = interval_time
 
-    def init_jobs(self, pat=f"{CONDOR.get('STRU', 'SUFFIX')}", mv_org=True):
-        job_pool = Pool(12)
-
+    def init_jobs(self, pat, n=4):
+        job_pool = Pool(n)
         job_dirs = []
         for structure in self.structures_path.walk(pattern=pat, is_file=True):
-            job = job_pool.apply_async(init_job, args=(structure, mv_org))
+            job = job_pool.apply_async(init_job, args=(structure,))
             job_dirs.append(job)
 
         job_pool.close()
@@ -337,7 +336,10 @@ class TianHeJobManager:
         jobs = []
         for job in job_dirs:
             jobs.append(["", "", job.get(), ""])
-        ALL_JOB_LOG.touch(_ALL_JOB_HEAD, jobs)
+        try:
+            ALL_JOB_LOG.touch(_ALL_JOB_HEAD, jobs)
+        except AttributeError:
+            raise Exception("Job initialization failed !, check structure files or match pattern!")
 
         return True
 

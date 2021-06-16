@@ -4,6 +4,7 @@
 from subprocess import getstatusoutput
 from time import sleep
 import pandas
+from multiprocessing.pool import Pool
 
 from utils.spath import SPath
 
@@ -60,10 +61,27 @@ def smart_fmt(inputs):
     raise TypeError
 
 
-def init_job(name: SPath, mv):
+def init_job(name: SPath):
     filename_dir = name.mkdir_filename()
-    name.copy_to(filename_dir, mv)
+    name.copy_to(filename_dir, mv_org=True)
     return filename_dir
+
+
+def multi_run(generator, func, n, *args, **kwargs):
+    pool = Pool(n)
+    results = []
+    for item in generator:
+        results.append(
+            pool.apply_async(func, args=(item,), *args, **kwargs)
+        )
+
+    pool.close()
+    pool.join()
+    for r in results:
+        try:
+            yield r.get()
+        except:
+            continue
 
 
 class LogCsv:
