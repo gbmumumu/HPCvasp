@@ -8,7 +8,7 @@ from utils.spath import SPath
 
 class WorkflowParser:
     def __init__(self, work_root: SPath, comment=None, source=None,
-                 modules=None, workflow=None, prog=None):
+                 modules=None, workflow=None, prog=None, name=None):
         self.work_root = work_root
         if comment is None:
             comment = "#!/bin/bash"
@@ -20,6 +20,11 @@ class WorkflowParser:
             workflow = WORKFLOW
         self.workflow = workflow
         self._py = PACKAGE_ROOT / "main.py"
+        self.name = name
+        if source is None:
+            self.source = f"source {CONDOR.get('SOURCE', 'FILES')}"
+        if modules is None:
+            self.module = f"module {CONDOR.get('MODULE', 'MODULES')}"
 
     def yield_job(self):
         for job_name, job_paras in self.workflow.items():
@@ -69,6 +74,17 @@ class WorkflowParser:
                 f"       and the subsequent tasks will not be performed\' \n"
         flow += f"  exit"
         flow += f"fi"
+        return flow
+
+    def get(self):
+        b = ''
+        b += f"{self.comment}\n"
+        b += f"{self.source}\n"
+        b += f"{self.module}\n"
+
+        for step, paras in self.yield_job():
+            b += self.parser(step, paras)
+        print(b)
 
 
 if __name__ == '__main__':

@@ -8,8 +8,9 @@ import pexpect
 from multiprocessing.pool import Pool
 
 from utils.spath import SPath
-from utils.tools import retry, get_output, LogCsv, dataframe_from_dict, init_job
-from config import CONDOR
+from utils.tools import retry, get_output, LogCsv, dataframe_from_dict
+from config import CONDOR, WORKFLOW
+from calculation.vasp.workflow import WorkflowParser
 
 TH_LOCAL = SPath(r"./.local").absolute()
 TH_LOCAL.mkdir(exist_ok=True)
@@ -324,18 +325,24 @@ class TianHeJobManager:
         self.structures_path = structures_path
         self.interval_time = interval_time
 
+    @staticmethod
+    def _init(name: SPath, *args, **kwargs):
+        filename_dir = name.mkdir_filename()
+        name.copy_to(filename_dir, mv_org=True)
+        return WorkflowParser(work_root=filename_dir, *args, **kwargs).get()
+
     def init_jobs(self, pat, n=4):
         job_pool = Pool(n)
         job_dirs = []
         for structure in self.structures_path.walk(pattern=pat, is_file=True):
-            job = job_pool.apply_async(init_job, args=(structure,))
+            job = job_pool.apply_async(self._init, args=(structure,))
             job_dirs.append(job)
 
         job_pool.close()
         job_pool.join()
         jobs = []
         for job in job_dirs:
-            jobs.append(["", "", job.get(), ""])
+            jobs.append(["", "", job.get(), "PD"])
         try:
             ALL_JOB_LOG.touch(_ALL_JOB_HEAD, jobs)
         except AttributeError:
@@ -344,10 +351,21 @@ class TianHeJobManager:
         return True
 
     def submit(self):
-        jobs = ALL_JOB_LOG.eval()
+        if not ALL_JOB_LOG.path.exists():
+            raise Exception("available job not found!")
+
         NPC.flush()
-        for job_workdir in jobs["WORKDIR"]:
-            job_obj = TianHeJob()
+        max_needed_node, max_needed_core = 0, 0
+        for _, val in WORKFLOW.items():
+            if max_needed_node < val["node"]:
+                max_needed_node = val["node"]
+            if max_needed_core < val["core"]:
+                max_needed_core = val["core"]
+
+        for job in ALL_JOB_LOG.data:
+            job_obj = TianHeJob(job_stat=job["RESULT"], job_path=job["WORKDIR"],
+                                partition=CONDOR.get("ALLOW", "PARTITION"),
+                                node=max_needed_node, core=max_needed_core)
 
 
 if __name__ == "__main__":

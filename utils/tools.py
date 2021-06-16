@@ -61,12 +61,6 @@ def smart_fmt(inputs):
     raise TypeError
 
 
-def init_job(name: SPath):
-    filename_dir = name.mkdir_filename()
-    name.copy_to(filename_dir, mv_org=True)
-    return filename_dir
-
-
 def multi_run(generator, func, n, *args, **kwargs):
     pool = Pool(n)
     results = []
@@ -90,6 +84,10 @@ class LogCsv:
 
     def __str__(self):
         return str(self.csv)
+
+    @property
+    def path(self):
+        return self.csv
 
     @property
     def data(self):
