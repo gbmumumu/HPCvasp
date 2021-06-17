@@ -5,7 +5,7 @@ import math
 from enum import Enum, unique
 from utils.spath import SPath
 from calculation.vasp.inputs import INCAR, KPOINTS, KPOINTSModes
-from utils.yhurm import TH_LOCAL, TianHeNodes, NPC, TianHeJob, ALL_JOB_LOG, RUNNING_JOB_LOG
+from utils.yhurm import TH_LOCAL, TianHeNodes, TianHeJob, ALL_JOB_LOG, RUNNING_JOB_LOG, TianHeWorker
 from utils.tools import LogCsv
 from config import WORKFLOW, CONDOR
 
@@ -138,7 +138,8 @@ class ErrType:
         elif err_code in (2, 3, 4, 5, 6, 7, 8, 16, 17, 19, 20, 22, 24, 27):
             print(f"error type: {err_type.value}, "
                   f"need to be resolved manually, check inputs setting!")
-            NPC.flush()
+            TianHeWorker(partition=CONDOR.get("ALLOW", "PARTITION"),
+                         total_allowed_node=CONDOR.getint("ALLOW", "TOTAL_NODE")).flush()
             if RUNNING_JOB_LOG.is_contain("JOBID", self.job_id):
                 job_nodes = TianHeNodes(self.job_id)
                 try:

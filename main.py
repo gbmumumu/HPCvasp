@@ -52,8 +52,10 @@ def get_inputs(work_dir, job_type):
               default=f"{CONDOR.get('STRU', 'SUFFIX')}")
 @click.option("--stru_dir", help="structure files directory",
               default=f"{CONDOR.get('STRU', 'PATH')}")
-def prepare_task(stru_dir, pat, process=4):
-    return TianHeJobManager(SPath(stru_dir)).init_jobs(pat=pat, n=process)
+def run(stru_dir, pat, process=4):
+    mana = TianHeJobManager(SPath(stru_dir))
+    mana.init_jobs(pat=pat, n=process)
+    mana.submit()
 
 
 if __name__ == '__main__':
