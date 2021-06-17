@@ -3,9 +3,11 @@
 
 import re
 from monty import os
+from queue import Queue
 import pandas
 import pexpect
 from multiprocessing.pool import Pool
+from time import sleep
 
 from utils.spath import SPath
 from utils.tools import retry, get_output, LogCsv, dataframe_from_dict
@@ -20,7 +22,7 @@ RUNNING_JOB_LOG = LogCsv(SPath(TH_LOCAL / "running_job.csv"))
 HPC_LOG = LogCsv(SPath(TH_LOCAL / "hpc.csv"))
 TEMP_FILE = SPath(TH_LOCAL / "tmp.txt")
 ALL_JOB_LOG = LogCsv(SPath(TH_LOCAL / "all_job.csv"))
-_ALL_JOB_HEAD = ["JOBID", "ST", "WORKDIR", "BASH", "RESULT"]
+_ALL_JOB_HEAD = ["JOBID", "ST", "WORKDIR", "NAME", "RESULT"]
 
 
 class TianHeTime:
@@ -128,7 +130,6 @@ class TianHeJob:
         ok, output = get_output(f"yhcontrol show job {self.id}")
         if ok != 0:
             return ok, None
-        # output = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhcontrol.txt").read_text()
         _, update_data = self._yhcontrol_parser(output)
         job_id = update_data["JOBID"]
         try:
@@ -173,19 +174,19 @@ class TianHeWorker:
         self.partition = partition
         self.alloc = total_allowed_node
         self.used = used_node
-        self.idle = idle_node
+        self._idle = idle_node
+        self.queue = Queue()
 
     @property
-    def hpc_log(self):
-        return HPC_LOG
+    def idle_node(self):
+        return self._idle
 
-    @property
-    def running_job_log(self):
-        return RUNNING_JOB_LOG
+    @idle_node.setter
+    def idle_node(self, val):
+        self._idle = val
 
     @staticmethod
     def _yhi_parser(log: SPath):
-        log = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhi.txt")
         if not log.is_empty():
             dat = log.read_text().split()
             for item in dat:
@@ -204,7 +205,6 @@ class TianHeWorker:
 
     @staticmethod
     def _yhq_parser(log: SPath):
-        log = SPath(r"C:\Users\SenGao.LAPTOP-C08N9B58\Desktop\crystalht\.local/yhq.txt")
         if not log.is_empty():
             dat = pandas.read_table(log, sep=r"\s+")
             dat["WORKDIR"] = None
@@ -213,22 +213,22 @@ class TianHeWorker:
 
     @retry(max_retry=5, inter_time=5)
     def yhq(self):
-        # ok, _ = get_output(f"yhqueue | grep {self.partition} > {TEMP_FILE}")
-        # if ok != 0:
-        #    return ok, None
+        ok, _ = get_output(f"yhqueue | grep {self.partition} > {TEMP_FILE}")
+        if ok != 0:
+            return ok, None
         ok, yhq_data = self._yhq_parser(TEMP_FILE)
-        # TEMP_FILE.rm_file()
+        TEMP_FILE.rm_file()
         if ok != 0:
             return ok, None
         return 0, yhq_data
 
     @retry(max_retry=5, inter_time=5)
     def yhi(self):
-        # ok, _ = get_output(f"yhinfo -s | grep {self.partition} > {TEMP_FILE}")
-        # if ok != 0:
-        #    return ok, None
+        ok, _ = get_output(f"yhinfo -s | grep {self.partition} > {TEMP_FILE}")
+        if ok != 0:
+            return ok, None
         ok, yhi_data = self._yhi_parser(TEMP_FILE)
-        # TEMP_FILE.rm_file()
+        TEMP_FILE.rm_file()
         if ok != 0:
             return ok, None
 
@@ -238,19 +238,38 @@ class TianHeWorker:
         _, sys_yhi = self.yhi()
         _, user_yhq = self.yhq()
         self.used = user_yhq["NODES"].sum()
+        self._idle = sys_yhi["IDLE"]
         user_yhi = dataframe_from_dict(
             dict(zip(_YHI_HEAD,
                      ["USER", self.alloc, self.used, None, None]))
         )
         all_yhi = sys_yhi.append(user_yhi, ignore_index=True)
-        user_yhq.to_csv(str(self.running_job_log), index=False)
-        all_yhi.to_csv(str(self.hpc_log), index=False)
+        user_yhq.to_csv(str(RUNNING_JOB_LOG), index=False)
+        all_yhi.to_csv(str(HPC_LOG), index=False)
 
     def yield_time_limit_exceed_jobs(self, time_limit=TianHeTime(3, 0, 0, 0)):
         self.flush()
-        for job_id in self.running_job_log.data["JOBID"]:
+        for job_id in RUNNING_JOB_LOG.data["JOBID"]:
             if TianHeJob(job_id=job_id).exceeds_time(time_limit):
                 yield job_id
+
+    def eval_job(self):
+        if not ALL_JOB_LOG.path.exists():
+            raise Exception("available job not found!")
+
+        self.flush()
+        max_needed_node, max_needed_core = 0, 0
+        for _, val in WORKFLOW.items():
+            if max_needed_node < val["node"]:
+                max_needed_node = val["node"]
+            if max_needed_core < val["core"]:
+                max_needed_core = val["core"]
+
+        for job in ALL_JOB_LOG.data:
+            dft_job = TianHeJob(job_stat=job["RESULT"], job_path=job["WORKDIR"],
+                                partition=CONDOR.get("ALLOW", "PARTITION"),
+                                node=max_needed_node, core=max_needed_core, name=job["NAME"])
+            self.queue.put(dft_job)
 
 
 class TianHeNodes:
@@ -275,17 +294,13 @@ class TianHeNodes:
                 used_nodes.append(j)
         return used_nodes
 
-    @property
-    def running_job_log(self):
-        return RUNNING_JOB_LOG
-
     def get_nodes(self, **kwargs):
-        if self.running_job_log.is_contain("JOBID", self.job_id):
-            job = self.running_job_log.get("JOBID", self.job_id)
+        if RUNNING_JOB_LOG.is_contain("JOBID", self.job_id):
+            job = RUNNING_JOB_LOG.get("JOBID", self.job_id)
             job_cn = job["NODELIST(REASON)"]
             return self._string_parser(job_cn.values.item())
         TianHeWorker(**kwargs).flush()
-        if not self.running_job_log.is_contain("JOBID", self.job_id):
+        if not RUNNING_JOB_LOG.is_contain("JOBID", self.job_id):
             return None
         return self.get_nodes()
 
@@ -314,10 +329,6 @@ class TianHeNodes:
             )
 
         return all(results)
-
-
-NPC = TianHeWorker(partition=CONDOR.get("ALLOW", "PARTITION"),
-                   total_allowed_node=CONDOR.getint("ALLOW", "TOTAL_NODE"))
 
 
 class TianHeJobManager:
@@ -352,21 +363,23 @@ class TianHeJobManager:
         return True
 
     def submit(self):
-        if not ALL_JOB_LOG.path.exists():
-            raise Exception("available job not found!")
+        worker = TianHeWorker(partition=CONDOR.get("ALLOW", "PARTITION"),
+                              total_allowed_node=CONDOR.getint("ALLOW", "TOTAL_NODE"), used_node=0)
+        worker.eval_job()
+        while not worker.queue.empty() and worker.idle_node > 0:
+            job = worker.queue.get()
+            job: TianHeJob
+            success, info = job.yhbatch()
+            if success:
+                info.update({"ST": "SS"})
+                worker.idle_node -= job.node
+            else:
+                info.update({"ST": "SF"})
+            ALL_JOB_LOG.update_many("WORKDIR", job.path, info)
+            sleep(self.interval_time)
 
-        NPC.flush()
-        max_needed_node, max_needed_core = 0, 0
-        for _, val in WORKFLOW.items():
-            if max_needed_node < val["node"]:
-                max_needed_node = val["node"]
-            if max_needed_core < val["core"]:
-                max_needed_core = val["core"]
-
-        for job in ALL_JOB_LOG.data:
-            job_obj = TianHeJob(job_stat=job["RESULT"], job_path=job["WORKDIR"],
-                                partition=CONDOR.get("ALLOW", "PARTITION"),
-                                node=max_needed_node, core=max_needed_core)
+    def post_process(self):
+        pass
 
 
 if __name__ == "__main__":

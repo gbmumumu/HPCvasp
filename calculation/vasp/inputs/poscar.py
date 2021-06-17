@@ -6,6 +6,7 @@ from collections import OrderedDict
 
 import spglib as spg
 
+from config import HUBBARD_U
 from utils.spath import SPath
 from utils.tools import smart_fmt
 
@@ -271,6 +272,36 @@ class POSCAR:
 
     def write(self, filepath: SPath, **kwargs):
         filepath.write_text(str(self), **kwargs)
+
+    def get_hubbard_u_if_need(self):
+        uo, uvi = [], []
+        huv, huo = HUBBARD_U.get("Uval"), HUBBARD_U.get("Uorbit")
+        for e in self.symbol:
+            if huv.get(e) is None:
+                uo.append(-1)
+                uvi.append(0)
+            else:
+                uo.append(huo.get(e))
+                uvi.append(huv.get(e))
+        flag = False
+        for f in uo:
+            if f != -1:
+                flag = True
+        if not flag:
+            return None
+        uvj = [0, ] * len(self.symbol)
+        lm = 4 if max(uo) == 2 else 6
+        u = {
+            "LDAU": ".T",
+            "LDAUTYPE": 2,
+            "LDAUL": uo,
+            "LDAUU": uvi,
+            "LDAUJ": uvj,
+            "LMAXMIX": lm
+        }
+        return u
+
+
 
 
 if __name__ == '__main__':

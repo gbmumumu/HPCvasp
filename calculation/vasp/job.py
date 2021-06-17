@@ -107,9 +107,14 @@ class VaspRunningJob:
             sfx = CONDOR.get("STRU", "SUFFIX")
             for _poscar in self.calc_dir.parent.walk(pattern=f"*{sfx}"):
                 _poscar.copy_to(self.calc_dir / "POSCAR")
-        incar.write(self._incar)
         assert self._poscar.exists()
         stru = POSCAR.from_file(self._poscar)
+        hubbard_u = stru.get_hubbard_u_if_need()
+        if hubbard_u is not None:
+            for lb, v in hubbard_u.items():
+                incar[lb] = v
+        incar.write(self._incar)
+
         if not self._potcar.exists():
             potcar_lib = CONDOR.get("VASP", "PSEUDO_POTENTIAL_DIR")
             if not SPath(potcar_lib).exists():

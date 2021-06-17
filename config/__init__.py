@@ -19,5 +19,8 @@ for template in _temp.walk(pattern="*.yaml"):
     INCAR_TEMPLATE.update(
         {template.name.replace(".yaml", ""): template.read_yaml()}
     )
+_hubbard = _config_root / "hubbard_u.yaml"
+HUBBARD_U = _hubbard.read_yaml()
+
 if __name__ == '__main__':
     pass
