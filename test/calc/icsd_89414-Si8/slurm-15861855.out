@@ -1,7 +1,0 @@
-enter check loop 0: /WORK/nscc-gz_material_1/ICSD_vasp/simple_substance_work/rerun/icsd_89414-Si8/Relax
-0
-copy CONTCAR to POSCAR
-enter check loop 1: /WORK/nscc-gz_material_1/ICSD_vasp/simple_substance_work/rerun/icsd_89414-Si8/Relax
-enter check loop 0: /WORK/nscc-gz_material_1/ICSD_vasp/simple_substance_work/rerun/icsd_89414-Si8/Scf
-enter check loop 0: /WORK/nscc-gz_material_1/ICSD_vasp/simple_substance_work/rerun/icsd_89414-Si8/Band
-enter check loop 0: /WORK/nscc-gz_material_1/ICSD_vasp/simple_substance_work/rerun/icsd_89414-Si8/Dos

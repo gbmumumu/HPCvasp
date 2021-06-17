@@ -3,16 +3,11 @@
 
 import re
 from monty import os
-from queue import Queue
 import pandas
 import pexpect
-from multiprocessing.pool import Pool
-from time import sleep
 
 from utils.spath import SPath
 from utils.tools import retry, get_output, LogCsv, dataframe_from_dict
-from config import CONDOR, WORKFLOW
-from calculation.vasp.workflow import WorkflowParser
 
 TH_LOCAL = SPath(r"./.local").absolute()
 TH_LOCAL.mkdir(exist_ok=True)
@@ -21,8 +16,6 @@ _YHI_HEAD = ["CLASS", "ALLOC", "IDLE", "DRAIN", "TOTAL"]
 RUNNING_JOB_LOG = LogCsv(SPath(TH_LOCAL / "running_job.csv"))
 HPC_LOG = LogCsv(SPath(TH_LOCAL / "hpc.csv"))
 TEMP_FILE = SPath(TH_LOCAL / "tmp.txt")
-ALL_JOB_LOG = LogCsv(SPath(TH_LOCAL / "all_job.csv"))
-_ALL_JOB_HEAD = ["JOBID", "ST", "WORKDIR", "NAME", "RESULT"]
 
 
 class TianHeTime:
@@ -171,11 +164,11 @@ class TianHeJob:
 class TianHeWorker:
     def __init__(self, partition="work", total_allowed_node=50,
                  used_node=0, idle_node=None):
+        super(TianHeWorker, self).__init__()
         self.partition = partition
         self.alloc = total_allowed_node
-        self.used = used_node
+        self._used = used_node
         self._idle = idle_node
-        self.queue = Queue()
 
     @property
     def idle_node(self):
@@ -184,6 +177,14 @@ class TianHeWorker:
     @idle_node.setter
     def idle_node(self, val):
         self._idle = val
+
+    @property
+    def used_node(self):
+        return self._used
+
+    @used_node.setter
+    def used_node(self, val):
+        self._used = val
 
     @staticmethod
     def _yhi_parser(log: SPath):
@@ -213,18 +214,18 @@ class TianHeWorker:
 
     @retry(max_retry=5, inter_time=5)
     def yhq(self):
-        ok, _ = get_output(f"yhqueue | grep {self.partition} > {TEMP_FILE}")
+        ok, x = get_output(f"yhqueue > {TEMP_FILE}")
         if ok != 0:
             return ok, None
         ok, yhq_data = self._yhq_parser(TEMP_FILE)
         TEMP_FILE.rm_file()
         if ok != 0:
             return ok, None
-        return 0, yhq_data
+        return 0, yhq_data[yhq_data["PARTITION"] == self.partition]
 
     @retry(max_retry=5, inter_time=5)
     def yhi(self):
-        ok, _ = get_output(f"yhinfo -s | grep {self.partition} > {TEMP_FILE}")
+        ok, x = get_output(f"yhinfo -s | grep {self.partition} > {TEMP_FILE}")
         if ok != 0:
             return ok, None
         ok, yhi_data = self._yhi_parser(TEMP_FILE)
@@ -237,11 +238,11 @@ class TianHeWorker:
     def flush(self):
         _, sys_yhi = self.yhi()
         _, user_yhq = self.yhq()
-        self.used = user_yhq["NODES"].sum()
+        self._used = user_yhq["NODES"].sum()
         self._idle = sys_yhi["IDLE"]
         user_yhi = dataframe_from_dict(
             dict(zip(_YHI_HEAD,
-                     ["USER", self.alloc, self.used, None, None]))
+                     ["USER", self.alloc, self._used, None, None]))
         )
         all_yhi = sys_yhi.append(user_yhi, ignore_index=True)
         user_yhq.to_csv(str(RUNNING_JOB_LOG), index=False)
@@ -252,24 +253,6 @@ class TianHeWorker:
         for job_id in RUNNING_JOB_LOG.data["JOBID"]:
             if TianHeJob(job_id=job_id).exceeds_time(time_limit):
                 yield job_id
-
-    def eval_job(self):
-        if not ALL_JOB_LOG.path.exists():
-            raise Exception("available job not found!")
-
-        self.flush()
-        max_needed_node, max_needed_core = 0, 0
-        for _, val in WORKFLOW.items():
-            if max_needed_node < val["node"]:
-                max_needed_node = val["node"]
-            if max_needed_core < val["core"]:
-                max_needed_core = val["core"]
-
-        for job in ALL_JOB_LOG.data:
-            dft_job = TianHeJob(job_stat=job["RESULT"], job_path=job["WORKDIR"],
-                                partition=CONDOR.get("ALLOW", "PARTITION"),
-                                node=max_needed_node, core=max_needed_core, name=job["NAME"])
-            self.queue.put(dft_job)
 
 
 class TianHeNodes:
@@ -329,57 +312,6 @@ class TianHeNodes:
             )
 
         return all(results)
-
-
-class TianHeJobManager:
-    def __init__(self, structures_path: SPath, interval_time=0.5):
-        self.structures_path = structures_path
-        self.interval_time = interval_time
-
-    @staticmethod
-    def _init(name: SPath, *args, **kwargs):
-        filename_dir = name.mkdir_filename()
-        name.copy_to(filename_dir, mv_org=True)
-        return WorkflowParser(work_root=filename_dir, *args, **kwargs).write_sh()
-
-    def init_jobs(self, pat, n=4):
-        job_pool = Pool(n)
-        job_dirs = []
-        for structure in self.structures_path.walk(pattern=pat, is_file=True):
-            job = job_pool.apply_async(self._init, args=(structure,))
-            job_dirs.append(job)
-
-        job_pool.close()
-        job_pool.join()
-        jobs = []
-        for job in job_dirs:
-            root, bash_name = job.get()
-            jobs.append(["", "PD", root, bash_name, ""])
-        try:
-            ALL_JOB_LOG.touch(_ALL_JOB_HEAD, jobs)
-        except AttributeError:
-            raise Exception("Job initialization failed !, check structure files or match pattern!")
-
-        return True
-
-    def submit(self):
-        worker = TianHeWorker(partition=CONDOR.get("ALLOW", "PARTITION"),
-                              total_allowed_node=CONDOR.getint("ALLOW", "TOTAL_NODE"), used_node=0)
-        worker.eval_job()
-        while not worker.queue.empty() and worker.idle_node > 0:
-            job = worker.queue.get()
-            job: TianHeJob
-            success, info = job.yhbatch()
-            if success:
-                info.update({"ST": "SS"})
-                worker.idle_node -= job.node
-            else:
-                info.update({"ST": "SF"})
-            ALL_JOB_LOG.update_many("WORKDIR", job.path, info)
-            sleep(self.interval_time)
-
-    def post_process(self):
-        pass
 
 
 if __name__ == "__main__":

@@ -5,8 +5,9 @@ import math
 from enum import Enum, unique
 from utils.spath import SPath
 from calculation.vasp.inputs import INCAR, KPOINTS, KPOINTSModes
-from utils.yhurm import TH_LOCAL, TianHeNodes, TianHeJob, ALL_JOB_LOG, RUNNING_JOB_LOG, TianHeWorker
+from utils.yhurm import TH_LOCAL, TianHeNodes, TianHeJob, RUNNING_JOB_LOG, TianHeWorker
 from utils.tools import LogCsv
+from calculation.npc import ALL_JOB_LOG
 from config import WORKFLOW, CONDOR
 
 _ERROR_JOB_HEAD = ["JOB_PATH", "ERROR_CODE", "ERROR_NAME"]

@@ -1,2 +1,2 @@
-,JOBID,ST,WORKDIR,BASH,RESULT
-0,,,test\calc\n,n.sh,PD
+,JOBID,ST,WORKDIR,NAME,RESULT
+0,,PD,/WORK/nscc-gz_sgao/matgen_dft/eht2/test/icsd_89414-Si8,icsd_89414-Si8.sh,
