@@ -53,6 +53,16 @@ def update_inputs(work_dir):
 
 
 @main.command()
+def flush():
+    control_paras = {
+        "partition": CONDOR.get("ALLOW", "PARTITION"),
+        "total_allowed_node": CONDOR.getint("ALLOW", "TOTAL_NODE"),
+    }
+    worker = TianHeWorker(**control_paras)
+    worker.flush()
+
+
+@main.command()
 @click.option("--stime", help="interval time(sec) between submit job", default=0.5)
 @click.option("--qsize", help="queue size, default: 20", default=20)
 @click.option("--process", help="multiprocessing num, default: 4", default=4)
@@ -75,9 +85,6 @@ def run(stru_dir, pat, process=4, qsize=20, stime=0.5):
 
     producer.start()
     submitter.start()
-
-    producer.join()
-    submitter.join()
 
 
 if __name__ == '__main__':

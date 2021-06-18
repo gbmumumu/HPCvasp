@@ -66,16 +66,12 @@ class TianHeJob:
         self.partition = partition
         self.name = name
 
-    @property
-    def running_job_log(self):
-        return RUNNING_JOB_LOG
-
     @retry(max_retry=5, inter_time=5)
     def yhcancel(self):
         ok, _ = get_output(f"yhcancel {self.id}")
         if ok != 0:
             return ok, None
-        self.running_job_log.drop_one(label="JOBID", value=self.id)
+        RUNNING_JOB_LOG.drop_one(label="JOBID", value=self.id)
         return 0, None
 
     @staticmethod
@@ -128,23 +124,23 @@ class TianHeJob:
         _, update_data = self._yhcontrol_parser(output)
         job_id = update_data["JOBID"]
         try:
-            if not self.running_job_log.is_contain("JOBID", job_id):
+            if not RUNNING_JOB_LOG.is_contain("JOBID", job_id):
                 new_data = dataframe_from_dict(update_data)
-                self.running_job_log.insert_one(new_data, index=False)
+                RUNNING_JOB_LOG.insert_one(new_data, index=False)
             else:
-                self.running_job_log.update_many("JOBID", job_id, update_data, index=False)
+                RUNNING_JOB_LOG.update_many("JOBID", job_id, update_data, index=False)
         except:
             return 1, None
         else:
             return 0, update_data
 
     def get_time(self, **kwargs):
-        if self.running_job_log.is_contain("JOBID", self.id):
-            job = self.running_job_log.get("JOBID", self.id)
+        if RUNNING_JOB_LOG.is_contain("JOBID", self.id):
+            job = RUNNING_JOB_LOG.get("JOBID", self.id)
             job_cn = job["TIME"]
             return TianHeTime.from_string(job_cn.values.item())
         TianHeWorker(**kwargs).flush()
-        if not self.running_job_log.is_contain("JOBID", self.id):
+        if not RUNNING_JOB_LOG.is_contain("JOBID", self.id):
             return None
         return self.get_time()
 

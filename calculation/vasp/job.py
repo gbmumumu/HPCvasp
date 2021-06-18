@@ -171,6 +171,7 @@ class VaspRunningJob:
         assert self._poscar.exists()
         stru = POSCAR.from_file(self._poscar)
         hubbard_u = stru.get_hubbard_u_if_need()
+        print(hubbard_u)
         if hubbard_u is not None:
             for lb, v in hubbard_u.items():
                 incar[lb] = v

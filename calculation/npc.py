@@ -4,7 +4,7 @@ import threading
 from time import sleep
 from multiprocessing.pool import Pool
 
-from utils.yhurm import TianHeWorker, TianHeJob, TH_LOCAL
+from utils.yhurm import TianHeWorker, TianHeJob, TH_LOCAL, RUNNING_JOB_LOG
 from utils.spath import SPath
 from utils.tools import LogCsv
 from calculation.vasp.workflow import WorkflowParser
