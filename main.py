@@ -76,6 +76,9 @@ def run(stru_dir, pat, process=4, qsize=20, stime=0.5):
     producer.start()
     submitter.start()
 
+    producer.join()
+    submitter.join()
+
 
 if __name__ == '__main__':
     main()
