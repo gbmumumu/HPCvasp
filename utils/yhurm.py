@@ -162,7 +162,6 @@ class TianHeJob:
 class TianHeWorker:
     def __init__(self, partition="work", total_allowed_node=50,
                  used_node=0, idle_node=None):
-        super(TianHeWorker, self).__init__()
         self.partition = partition
         self.alloc = total_allowed_node
         self._used = used_node
