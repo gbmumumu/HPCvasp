@@ -14,7 +14,7 @@ class POTCAR:
 
     def _cat_by(self, pel, des):
         return get_output(
-            f"cat {self.lib / pel / 'POTCAR'} >> {des / 'POTCAR'}"
+            f"cat {self.lib / pel / 'POTCAR'} >> {des}"
         )
 
     @staticmethod
@@ -23,7 +23,6 @@ class POTCAR:
 
     def cat(self, poscar: POSCAR, potcar):
         for element in poscar.symbol:
-            pp = element
             self._cat_by(
                 element, potcar
             )

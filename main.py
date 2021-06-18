@@ -41,10 +41,15 @@ def show_errors_from(work_dir, log_name):
 
 
 @main.command()
-@click.option("--job_type", help="job type in work config")
 @click.option("--work_dir", help="work directory")
-def get_inputs(work_dir, job_type):
-    return VaspRunningJob(SPath(work_dir)).get_inputs_file(job_type)
+def get_inputs(work_dir):
+    return VaspRunningJob(SPath(work_dir)).get_inputs_file()
+
+
+@main.command()
+@click.option("--work_dir", help="work directory")
+def update_inputs(work_dir):
+    return VaspRunningJob(SPath(work_dir)).update_input_files()
 
 
 @main.command()
@@ -62,13 +67,13 @@ def run(stru_dir, pat, process=4, qsize=20, stime=0.5):
         "total_allowed_node": CONDOR.getint("ALLOW", "TOTAL_NODE"),
     }
     worker = TianHeWorker(**control_paras)
+    worker.flush()
     mana = Npc(SPath(stru_dir), interval_time=stime, )
     mana.init_jobs(pat, process)
     producer = Producer(queue=job_queue, worker=worker)
     submitter = Submitter(queue=job_queue, worker=worker)
 
     producer.start()
-    print(job_queue.qsize())
     submitter.start()
 
 

@@ -15,7 +15,9 @@ _ALL_JOB_HEAD = ["JOBID", "ST", "WORKDIR", "NAME", "RESULT"]
 
 
 class Producer(threading.Thread):
-    def __init__(self, queue, worker: TianHeWorker, ):
+    Finished = True
+
+    def __init__(self, queue, worker: TianHeWorker):
         super(Producer, self).__init__()
         self.worker = worker
         self.queue = queue
@@ -37,21 +39,29 @@ class Producer(threading.Thread):
                                 partition=CONDOR.get("ALLOW", "PARTITION"),
                                 node=max_needed_node, core=max_needed_core, name=job["NAME"])
             self.queue.put(dft_job)
-        print(self.queue.qsize())
+        self.queue.put(self.Finished)
 
 
 class Submitter(threading.Thread):
-    def __init__(self, queue, worker: TianHeWorker, stime=0.5):
+    Finished = True
+
+    def __init__(self, queue, worker: TianHeWorker, stime=0.5, flush_time=60):
         super(Submitter, self).__init__()
         self.queue = queue
         self.worker = worker
         self.stime = stime
+        self.ftime = flush_time
 
     def run(self):
-        while not self.queue.empty() and \
-                self.worker.idle_node > 0 and \
-                self.worker.used_node <= CONDOR.getint("ALLOW", "TOTAL_NODE"):
+        while True:
             job = self.queue.get()
+            if job is self.Finished:
+                break
+            print("Idle node: ", self.worker.idle_node)
+            print("Used node: ", self.worker.used_node)
+            while self.worker.idle_node <= 0 or self.worker.used_node > CONDOR.getint("ALLOW", "TOTAL_NODE"):
+                sleep(self.ftime)
+                self.worker.flush()
             success, info = job.yhbatch()
             if success:
                 info.update({"ST": "SS"})
@@ -87,7 +97,7 @@ class Npc:
         for job in job_dirs:
             root, bash_name = job.get()
             jobs.append(["", "PD", root, bash_name, ""])
-      
+
         try:
             ALL_JOB_LOG.touch(_ALL_JOB_HEAD, jobs)
         except (AttributeError, IndexError):

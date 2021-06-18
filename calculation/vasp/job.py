@@ -22,14 +22,17 @@ class VaspRunningJob:
         self._oszicar = self.calc_dir / "OSZICAR"
         self._incar = self.calc_dir / "INCAR"
         self._potcar = self.calc_dir / "POTCAR"
+        self._running = self.calc_dir / "running"
+        self._jtype = self.calc_dir.name
+        self._spin = self.calc_dir / "is_spin.txt"
+        self._converge = self.calc_dir / "converge.txt"
 
     def is_spin(self):
         oszicar = self.calc_dir / "OSZICAR"
         final_mag = OSZICAR(oszicar).final_mag
         if final_mag is not None:
             if abs(final_mag) > 0.004:
-                is_spin = self.calc_dir / "is_spin.txt"
-                is_spin.write_text(str(final_mag))
+                self._spin.write_text(str(final_mag))
                 return True
         return False
 
@@ -37,8 +40,7 @@ class VaspRunningJob:
         result = OUTCAR(self._outcar)
         if result.finished():
             if result.converged() or INCAR.from_file(self._incar).get("ISIF") != 3:
-                converge = self.calc_dir / "converge.txt"
-                converge.touch()
+                self._converge.touch()
                 return True
         return False
 
@@ -82,34 +84,94 @@ class VaspRunningJob:
             print(f"error type: {item.value}")
         return errors
 
-    def get_inputs_file(self, job_type):
-        job_info = WORKFLOW[job_type]
-        last_job = job_info.get("parent")
-        incar_paras = INCAR_TEMPLATE.get(job_type)
-        assert incar_paras is not None
-        incar = INCAR(**incar_paras)
-        if last_job is not None:
-            last_job_path = self.calc_dir.parent / last_job
-            last_job_files = job_info.get("parent_files")
-            spin_txt = last_job_path / "is_spin.txt"
-            if spin_txt.exists():
-                incar["ISPIN"] = 2
-                spin_txt.copy_to(self.calc_dir)
-            if last_job_files:
-                for filename in last_job_files:
-                    file = last_job_path / filename
-                    if filename == "CONTCAR":
+    @property
+    def parent_jtype(self):
+        return self.job_detail.get("parent")
+
+    @property
+    def parent_legacy(self):
+        if self.parent_jtype is not None:
+            parent_files = self.job_detail.get("parent_files")
+            return [] if parent_files is None else parent_files
+        return []
+
+    @property
+    def job_detail(self):
+        return WORKFLOW[self._jtype]
+
+    @property
+    def ktype(self):
+        ktype = self.job_detail.get("ktype")
+        return KPOINTSModes.from_string(ktype)
+
+    @property
+    def kpara(self):
+        kval = self.job_detail.get("kval")
+        if len(kval) < self.try_:
+            kval.extend([kval[-1], ] * (self.try_ - len(kval)))
+        else:
+            kval = kval[:self.try_]
+        return kval
+
+    @property
+    def incar_(self):
+        incar_ = self.job_detail.get("incar_paras")
+        if incar_ is None:
+            return []
+        return incar_
+
+    @property
+    def try_(self):
+        tyn = self.job_detail.get("try_num")
+        return tyn if tyn is not None else 2
+
+    def _inherit_from_parent(self):
+        if self.parent_jtype is not None:
+            parent_path = self.calc_dir.parent / self.parent_jtype
+            if self.parent_legacy:
+                for _file in self.parent_legacy:
+                    file = parent_path / _file
+                    if _file == "CONTCAR":
                         file.copy_to(self.calc_dir / "POSCAR")
                     else:
                         file.copy_to(self.calc_dir)
+            parent_is_spin = parent_path / "is_spin.txt"
+            if parent_is_spin.exists():
+                parent_is_spin.copy_to(self.calc_dir)
+
+        return
+
+    def _get_idx(self):
+        if not self._running.exists():
+            return 0
+        idx = smart_fmt(self._running.read_text())
+        self._running.write_text(data=f"{idx + 1}")
+        return idx
+
+    def _write_kpt(self, stru, kval_):
+        if self.ktype == KPOINTSModes.LineMode:
+            kpoints = KPOINTS(interval_of_kpoints=kval_, style=self.ktype)
+            kpoints.get_hk_path(stru)
         else:
-            incar["ISPIN"] = 2
+            kpoints = KPOINTS(style=self.ktype)
+            kpoints.get_kmesh(stru, kval_)
+        kpoints.write(self._kpoints)
+
+    def get_inputs_file(self):
+        self._inherit_from_parent()
+        incar_paras = INCAR_TEMPLATE.get(self._jtype)
+        assert incar_paras is not None
+        incar = INCAR(**incar_paras)
+        if not self._spin.exists():
+            incar["ISPIN"] = 1
+        if not self._poscar.exists() and self.parent_jtype is None:
             sfx = CONDOR.get("STRU", "SUFFIX")
-            for _poscar in self.calc_dir.parent.walk(pattern=f"*{sfx}"):
+            for _poscar in self.calc_dir.parent.walk(pattern=f"{sfx}"):
                 _poscar.copy_to(self.calc_dir / "POSCAR")
         assert self._poscar.exists()
         stru = POSCAR.from_file(self._poscar)
         hubbard_u = stru.get_hubbard_u_if_need()
+        print(hubbard_u)
         if hubbard_u is not None:
             for lb, v in hubbard_u.items():
                 incar[lb] = v
@@ -117,33 +179,29 @@ class VaspRunningJob:
 
         if not self._potcar.exists():
             potcar_lib = CONDOR.get("VASP", "PSEUDO_POTENTIAL_DIR")
-            if not SPath(potcar_lib).exists():
+            potcar_lib = SPath(potcar_lib)
+            if not potcar_lib.exists():
                 raise FileNotFoundError("POTCAR Source not found!")
             POTCAR(lib=potcar_lib).cat(stru, self._potcar)
-        kpt_type, *kpt_paras = job_info.get("kpt")
-        try_num = job_info.get("try_num")
-        if try_num is None:
-            try_num = 2
-        if len(kpt_paras) < try_num:
-            kpt_paras.extend([kpt_paras[-1], ] * (try_num - len(kpt_paras)))
-        else:
-            kpt_paras = kpt_paras[:try_num]
-        run_time_txt = self.calc_dir / "running"
-        if not run_time_txt.exists():
-            run_time_txt.write_text(data=f"{1}")
-            kpt_para = kpt_paras[0]
-        else:
-            run_time = smart_fmt(run_time_txt.read_text())
-            kpt_para = kpt_paras[run_time]
-            run_time_txt.write_text(data=f"{run_time + 1}")
-        kpt_style = KPOINTSModes.from_string(kpt_type)
-        if kpt_style == KPOINTSModes.LineMode:
-            kpoints = KPOINTS(interval_of_kpoints=kpt_para, style=kpt_style)
-            kpoints.get_hk_path(stru)
-        else:
-            kpoints = KPOINTS(style=kpt_style)
-            kpoints.get_kmesh(stru, kpt_para)
-        kpoints.write(self._kpoints)
+
+        self._running.write_text(data=f"{1}")
+        self._write_kpt(stru, self.kpara[0])
+
+    def update_input_files(self):
+        assert all(
+            [self._incar.exists(), self._potcar.exists(),
+             self._kpoints.exists(), self._poscar.exists(), self._running.exists()]
+        ), RuntimeError
+        times = self._get_idx()
+        self._write_kpt(stru=POSCAR.from_file(self._poscar),
+                        kval_=self.kpara[times])
+        if self.incar_[times]:
+            incar = INCAR.from_file(self._incar)
+            for key, val in self.incar_[times].items():
+                incar[key] = val
+            incar.write(self._incar)
+
+        return
 
 
 if __name__ == '__main__':

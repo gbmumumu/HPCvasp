@@ -97,5 +97,9 @@ class INCAR:
         return repr(self.paras)
 
 
+    def get(self, item):
+        return self.paras.get(item)
+
+
 if __name__ == '__main__':
     pass

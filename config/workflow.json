@@ -3,13 +3,16 @@
     "node": 1,
     "core": 24,
     "try_num": 3,
-    "kpt": ["L", 0.06, 40, 0.02]
+    "ktype": "M",
+    "kval": [0.04, 0.02]
   },
   "Relax": {
     "node": 1,
     "core": 24,
     "try_num": 5,
-    "kpt": ["M", 0.04, 0.02],
+    "ktype": "M",
+    "kval": [0.04, 0.02],
+    "incar_paras": [{"POTIM": 0.5}, {"POTIM":  0.05}],
     "parent": "Test_spin",
     "parent_files": ["POTCAR", "POSCAR"]
   },
@@ -17,7 +20,8 @@
     "node": 1,
     "core": 24,
     "try_num": 2,
-    "kpt": ["M", 0.02],
+    "ktype": "M",
+    "kval": [ 0.04, 0.02],
     "parent": "Relax",
     "parent_files": ["POTCAR", "CONTCAR"]
   },
@@ -25,7 +29,8 @@
     "node": 1,
     "core": 24,
     "try_num": 2,
-    "kpt": ["L", 40],
+    "ktype": "L",
+    "kval": [40],
     "parent": "Scf",
     "parent_files": ["POTCAR", "CONTCAR", "CHGCAR", "CHG", "WAVECAR"]
   },
@@ -33,7 +38,8 @@
     "node": 1,
     "core": 24,
     "try_num": 2,
-    "kpt": ["M", 0.02],
+    "ktype": "M",
+    "kval": [0.04, 0.02],
     "parent": "Scf",
     "parent_files": ["POTCAR", "CONTCAR", "CHGCAR", "CHG", "WAVECAR"]
   }

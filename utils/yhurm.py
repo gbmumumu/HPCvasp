@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import re
+import os.path as osp
 from monty import os
 import pandas
 import pexpect
@@ -9,7 +10,8 @@ import pexpect
 from utils.spath import SPath
 from utils.tools import retry, get_output, LogCsv, dataframe_from_dict
 
-TH_LOCAL = SPath(r"./.local").absolute()
+PROG_PATH = SPath(osp.abspath(__file__)).parent.parent 
+TH_LOCAL = PROG_PATH / ".local"
 TH_LOCAL.mkdir(exist_ok=True)
 _YHQ_HEAD = "JOBID,PARTITION,NAME,USER,ST,TIME,NODE,NODELIST(REASON),WORKDIR".split(',')
 _YHI_HEAD = ["CLASS", "ALLOC", "IDLE", "DRAIN", "TOTAL"]
@@ -221,7 +223,7 @@ class TianHeWorker:
         TEMP_FILE.rm_file()
         if ok != 0:
             return ok, None
-        return 0, yhq_data[yhq_data["PARTITION"] == self.partition]
+        return 0, yhq_data
 
     @retry(max_retry=5, inter_time=5)
     def yhi(self):
@@ -239,7 +241,7 @@ class TianHeWorker:
         _, sys_yhi = self.yhi()
         _, user_yhq = self.yhq()
         self._used = user_yhq["NODES"].sum()
-        self._idle = sys_yhi["IDLE"]
+        self._idle = sys_yhi["IDLE"].values[0]
         user_yhi = dataframe_from_dict(
             dict(zip(_YHI_HEAD,
                      ["USER", self.alloc, self._used, None, None]))
