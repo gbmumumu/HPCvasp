@@ -100,12 +100,11 @@ class LogCsv:
         return new_data.to_csv(self.csv, **kwargs)
 
     @staticmethod
-    def _update(tmp_dat, org_lb, org_val, new_label=None, new_val=None):
-        if new_label is None:
-            tmp_dat.loc[tmp_dat[org_lb] == org_val] = new_val
+    def _update(tmp_dat, org_lb, org_val, new_lb=None, new_val=None):
+        if new_lb is None:
+            tmp_dat.loc[tmp_dat[org_lb] == org_val, org_lb] = new_val
         else:
-            tmp_dat[new_label][tmp_dat[org_lb] == org_val] = new_val
-
+            tmp_dat.loc[tmp_dat[org_lb] == org_val, new_lb] = new_val
         return tmp_dat
 
     def update_one(self, label, value, new_label=None, new_value=None, **kwargs):
@@ -124,7 +123,7 @@ class LogCsv:
 
     def drop_one(self, label, value, **kwargs):
         tmp = self.data.copy()
-        row_list = tmp[tmp[label] == value].index.tolist()
+        row_list = tmp.loc[tmp[label] == value].index.tolist()
         tmp.drop(row_list, inplace=True, **kwargs)
         self.apply(tmp)
 
@@ -135,11 +134,11 @@ class LogCsv:
 
     def is_contain(self, label, val):
         tmp = self.data.copy()
-        return bool(tmp[tmp[label] == val].index.tolist())
+        return bool(tmp.loc[tmp[label] == val].index.tolist())
 
     def get(self, label, val):
         tmp = self.data.copy()
-        return tmp[tmp[label] == val]
+        return tmp.loc[tmp[label] == val]
 
     def touch(self, head: list, values: list, **kwargs):
         nov = len(values)
