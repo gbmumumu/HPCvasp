@@ -195,13 +195,17 @@ class VaspRunningJob:
         times = self._get_idx()
         self._write_kpt(stru=POSCAR.from_file(self._poscar),
                         kval_=self.kpara[times])
-        if self.incar_[times]:
+        try:
+            uip = self.incar_[times]
+        except IndexError:
+            return
+        else:
             incar = INCAR.from_file(self._incar)
-            for key, val in self.incar_[times].items():
+            for key, val in uip.items():
                 incar[key] = val
             incar.write(self._incar)
-
-        return
+        finally:
+            return
 
 
 if __name__ == '__main__':

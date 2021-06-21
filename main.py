@@ -85,6 +85,7 @@ def run(stru_dir, pat, process=4, qsize=20, stime=0.5):
 
     producer.start()
     submitter.start()
+    worker.flush()
 
 
 if __name__ == '__main__':

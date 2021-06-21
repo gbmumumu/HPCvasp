@@ -53,13 +53,14 @@ class Submitter(threading.Thread):
         self.ftime = flush_time
 
     def run(self):
+        allow_node = CONDOR.getint("ALLOW", "TOTAL_NODE")
         while True:
             job = self.queue.get()
             if job is self.Finished:
                 break
             print("Idle node: ", self.worker.idle_node)
             print("Used node: ", self.worker.used_node)
-            while self.worker.idle_node <= 0 or self.worker.used_node > CONDOR.getint("ALLOW", "TOTAL_NODE"):
+            while self.worker.idle_node <= 0 or self.worker.used_node >= allow_node:
                 sleep(self.ftime)
                 self.worker.flush()
             success, info = job.yhbatch()
