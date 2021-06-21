@@ -185,28 +185,30 @@ class TianHeWorker:
 
     @staticmethod
     def _yhi_parser(log: SPath):
-        if not log.is_empty():
-            dat = log.read_text().split()
-            for item in dat:
-                if "/" in item:
-                    try:
-                        node_info = [int(i) for i in item.split("/")]
-                    except:
-                        break
-                    else:
-                        node_info.insert(0, "SLURM")
-                        return 0, dataframe_from_dict(
-                            dict(zip(_YHI_HEAD,
-                                     node_info))
-                        )
+        if log.exists():
+            if not log.is_empty():
+                dat = log.read_text().split()
+                for item in dat:
+                    if "/" in item:
+                        try:
+                            node_info = [int(i) for i in item.split("/")]
+                        except:
+                            break
+                        else:
+                            node_info.insert(0, "SLURM")
+                            return 0, dataframe_from_dict(
+                                dict(zip(_YHI_HEAD,
+                                         node_info))
+                            )
         return 1, None
 
     @staticmethod
     def _yhq_parser(log: SPath):
-        if not log.is_empty():
-            dat = pandas.read_table(log, sep=r"\s+")
-            dat["WORKDIR"] = None
-            return 0, dat
+        if log.exists():
+            if not log.is_empty():
+                dat = pandas.read_table(log, sep=r"\s+")
+                dat["WORKDIR"] = None
+                return 0, dat
         return 1, None
 
     @retry(max_retry=5, inter_time=5)

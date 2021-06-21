@@ -26,7 +26,6 @@ class Producer(threading.Thread):
         if not ALL_JOB_LOG.path.exists():
             raise Exception("available job not found!")
 
-        self.worker.flush()
         max_needed_node, max_needed_core = 0, 0
         for _, val in WORKFLOW.items():
             if max_needed_node < val["node"]:

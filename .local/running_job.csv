@@ -1,2 +1,3 @@
 JOBID,PARTITION,NAME,USER,ST,TIME,NODES,NODELIST(REASON),WORKDIR
-17202940,work,icsd_894,nscc-gz_sgao,R,1:21:39,1,cn10192,
+17210304,free,icsd-995,nscc-gz_sgao,PD,0:00,1,(Priority),
+17210280,free,icsd_894,nscc-gz_sgao,R,7:15,1,cn9900,
