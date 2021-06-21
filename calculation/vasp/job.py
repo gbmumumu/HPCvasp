@@ -170,11 +170,14 @@ class VaspRunningJob:
                 _poscar.copy_to(self.calc_dir / "POSCAR")
         assert self._poscar.exists()
         stru = POSCAR.from_file(self._poscar)
-        hubbard_u = stru.get_hubbard_u_if_need()
-        print(hubbard_u)
-        if hubbard_u is not None:
-            for lb, v in hubbard_u.items():
-                incar[lb] = v
+        dft_u = CONDOR.get("METHOD", "DFT_U")
+        print(dft_u)
+        if dft_u:
+            if dft_u.lower()[0] == "t":
+                hubbard_u = stru.get_hubbard_u_if_need()
+                if hubbard_u is not None:
+                    for lb, v in hubbard_u.items():
+                        incar[lb] = v
         incar.write(self._incar)
 
         if not self._potcar.exists():
