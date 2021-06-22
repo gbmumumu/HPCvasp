@@ -110,7 +110,7 @@ class LogCsv:
     def update_one(self, label, value, new_label=None, new_value=None, **kwargs):
         tmp = self.data.copy()
         tmp = self._update(tmp, label, value, new_label, new_value)
-        self.apply(tmp, **kwargs)
+        self.apply(tmp, index=False, **kwargs)
 
     def update_many(self, label, value, new_values: dict, **kwargs):
         tmp = self.data.copy()

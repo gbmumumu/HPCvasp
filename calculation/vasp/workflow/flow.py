@@ -50,7 +50,7 @@ class WorkflowParser:
         if try_num is None:
             try_num = 1
         flow += f"echo \'prepare {job_name} inputs.\'\n"
-        flow += f"python {self._py} get-inputs --work_dir {task_dir}\n"
+        flow += f"python {self._py} gif --work_dir {task_dir}\n"
         flow += f"for ((try_num=1;try_num<={try_num};try_num++))\n"
         flow += "  do\n"
         flow += f"  echo \"task {job_name} round: $try_num on {node} node {core} core\"\n"
@@ -68,7 +68,7 @@ class WorkflowParser:
         flow += f"    python {self._py} errors --work_dir {task_dir}\n"
         flow += f"  fi\n"
         flow += f"  echo \'calculation not done, prepare to next loop\'\n"
-        flow += f"  python {self._py} update-inputs --work_dir {task_dir}\n"
+        flow += f"  python {self._py} uif --work_dir {task_dir}\n"
         flow += f"done\n"
         flow += f"if [ ! -f \"{converge_txt}\" ];then\n"
         flow += f"  echo \'The job in the specified setting is not completed, " \

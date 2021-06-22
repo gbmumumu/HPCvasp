@@ -36,19 +36,19 @@ def errors(work_dir):
 @main.command()
 @click.option("--log_name", help="log filename")
 @click.option("--work_dir", help="work directory")
-def show_errors_from(work_dir, log_name):
+def match(work_dir, log_name):
     return VaspRunningJob(SPath(work_dir)).get_errors(log_name)
 
 
 @main.command()
 @click.option("--work_dir", help="work directory")
-def get_inputs(work_dir):
+def gif(work_dir):
     return VaspRunningJob(SPath(work_dir)).get_inputs_file()
 
 
 @main.command()
 @click.option("--work_dir", help="work directory")
-def update_inputs(work_dir):
+def uif(work_dir):
     return VaspRunningJob(SPath(work_dir)).update_input_files()
 
 
@@ -80,7 +80,7 @@ def run(stru_dir, pat, process=4, qsize=20, stime=0.5):
     worker.flush()
     mana = Npc(SPath(stru_dir), interval_time=stime, )
     mana.init_jobs(pat, process)
-    producer = Producer(queue=job_queue, worker=worker)
+    producer = Producer(queue=job_queue)
     submitter = Submitter(queue=job_queue, worker=worker)
 
     producer.start()

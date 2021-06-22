@@ -1,46 +1,28 @@
 {
-  "Test_spin": {
-    "node": 1,
-    "core": 24,
+  "Coarse_relax": {
+    "node": 2,
+    "core": 48,
     "try_num": 3,
     "ktype": "M",
-    "kval": [0.04, 0.02]
+    "kval": [0.06]
   },
-  "Relax": {
-    "node": 1,
-    "core": 24,
+  "Fine_relax": {
+    "node": 2,
+    "core": 48,
     "try_num": 5,
     "ktype": "M",
-    "kval": [0.04, 0.02],
-    "incar_paras": [{"POTIM": 0.5}, {"POTIM":  0.05}],
-    "parent": "Test_spin",
-    "parent_files": ["POTCAR", "POSCAR"]
-  },
-  "Scf": {
-    "node": 1,
-    "core": 24,
-    "try_num": 2,
-    "ktype": "M",
-    "kval": [ 0.04, 0.02],
-    "parent": "Relax",
+    "kval": [0.04,],
+    "incar_paras": [{"POTIM": 0.5}, {"POTIM":  0.2}, {"POTIM":  0.05}],
+    "parent": "Coarse_relax",
     "parent_files": ["POTCAR", "CONTCAR"]
   },
-  "Band": {
-    "node": 1,
-    "core": 24,
-    "try_num": 2,
-    "ktype": "L",
-    "kval": [40],
-    "parent": "Scf",
-    "parent_files": ["POTCAR", "CONTCAR", "CHGCAR", "CHG", "WAVECAR"]
-  },
-  "Dos": {
-    "node": 1,
-    "core": 24,
+  "Scf": {
+    "node": 2,
+    "core": 48,
     "try_num": 2,
     "ktype": "M",
-    "kval": [0.04, 0.02],
-    "parent": "Scf",
-    "parent_files": ["POTCAR", "CONTCAR", "CHGCAR", "CHG", "WAVECAR"]
+    "kval": [ 0.04],
+    "parent": "Fine_Relax",
+    "parent_files": ["POTCAR", "CONTCAR"]
   }
 }

@@ -17,9 +17,8 @@ _ALL_JOB_HEAD = ["JOBID", "ST", "WORKDIR", "NAME", "RESULT"]
 class Producer(threading.Thread):
     Finished = True
 
-    def __init__(self, queue, worker: TianHeWorker):
+    def __init__(self, queue):
         super(Producer, self).__init__()
-        self.worker = worker
         self.queue = queue
 
     def run(self):
@@ -63,6 +62,7 @@ class Submitter(threading.Thread):
                 sleep(self.ftime)
                 self.worker.flush()
             success, info = job.yhbatch()
+            print(success, info)
             if success:
                 info.update({"ST": "SS"})
                 self.worker.idle_node -= job.node

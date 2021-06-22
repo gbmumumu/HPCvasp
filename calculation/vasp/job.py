@@ -104,21 +104,26 @@ class VaspRunningJob:
         ktype = self.job_detail.get("ktype")
         return KPOINTSModes.from_string(ktype)
 
+    @staticmethod
+    def _make_comp(val: list, length):
+        n = len(val)
+        if n < length:
+            val.extend([val[-1], ] * (length - n))
+        else:
+            val = val[:length]
+        return val
+
     @property
     def kpara(self):
         kval = self.job_detail.get("kval")
-        if len(kval) < self.try_:
-            kval.extend([kval[-1], ] * (self.try_ - len(kval)))
-        else:
-            kval = kval[:self.try_]
-        return kval
+        return self._make_comp(kval, self.try_)
 
     @property
     def incar_(self):
         incar_ = self.job_detail.get("incar_paras")
         if incar_ is None:
             return []
-        return incar_
+        return self._make_comp(incar_, self.try_)
 
     @property
     def try_(self):
@@ -145,6 +150,8 @@ class VaspRunningJob:
         if not self._running.exists():
             return 0
         idx = smart_fmt(self._running.read_text())
+        if idx >= self.try_:
+            return None
         self._running.write_text(data=f"{idx + 1}")
         return idx
 
@@ -171,7 +178,6 @@ class VaspRunningJob:
         assert self._poscar.exists()
         stru = POSCAR.from_file(self._poscar)
         dft_u = CONDOR.get("METHOD", "DFT_U")
-        print(dft_u)
         if dft_u:
             if dft_u.lower()[0] == "t":
                 hubbard_u = stru.get_hubbard_u_if_need()
@@ -196,19 +202,20 @@ class VaspRunningJob:
              self._kpoints.exists(), self._poscar.exists(), self._running.exists()]
         ), RuntimeError
         times = self._get_idx()
-        self._write_kpt(stru=POSCAR.from_file(self._poscar),
-                        kval_=self.kpara[times])
-        try:
-            uip = self.incar_[times]
-        except IndexError:
-            return
-        else:
-            incar = INCAR.from_file(self._incar)
-            for key, val in uip.items():
-                incar[key] = val
-            incar.write(self._incar)
-        finally:
-            return
+        if times is not None:
+            try:
+                self._write_kpt(stru=POSCAR.from_file(self._poscar),
+                                kval_=self.kpara[times])
+                uip = self.incar_[times]
+            except IndexError:
+                return
+            else:
+                incar = INCAR.from_file(self._incar)
+                for key, val in uip.items():
+                    incar[key] = val
+                incar.write(self._incar)
+            finally:
+                return
 
 
 if __name__ == '__main__':
