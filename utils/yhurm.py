@@ -8,7 +8,7 @@ import pexpect
 
 from utils.spath import SPath
 from utils.tools import retry, get_output, dataframe_from_dict
-from utils.log import RUNNING_JOB_LOG, HPC_LOG, TEMP_FILE, _YHI_HEAD, _YHQ_HEAD
+from utils.log import RUNNING_JOB_LOG, HPC_LOG, TEMP_FILE, YHI_LABEL, YHQ_LABEL
 
 
 class TianHeTime:
@@ -75,7 +75,7 @@ class TianHeJob:
     def _yhcontrol_parser(output):
         regex = re.compile(r"\s*(.*?)=(.*?)\s+?")
         control = {}
-        for keyword in _YHQ_HEAD:
+        for keyword in YHQ_LABEL:
             for key, val in regex.findall(output):
                 key = key.upper()
                 if keyword == key:
@@ -188,7 +188,7 @@ class TianHeWorker:
                         else:
                             node_info.insert(0, "SLURM")
                             return 0, dataframe_from_dict(
-                                dict(zip(_YHI_HEAD,
+                                dict(zip(YHI_LABEL,
                                          node_info))
                             )
         return 1, None
@@ -231,7 +231,7 @@ class TianHeWorker:
         self._used = user_yhq["NODES"].sum()
         self._idle = sys_yhi["IDLE"].values[0]
         user_yhi = dataframe_from_dict(
-            dict(zip(_YHI_HEAD,
+            dict(zip(YHI_LABEL,
                      ["USER", self.alloc, self._used, None, None]))
         )
         all_yhi = sys_yhi.append(user_yhi, ignore_index=True)

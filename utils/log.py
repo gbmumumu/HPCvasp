@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 import os.path as osp
 import pandas
-from utils.tools import SPath, dataframe_from_dict
+from utils.tools import dataframe_from_dict
+from utils.spath import SPath
 
 PROG_PATH = SPath(osp.abspath(__file__)).parent.parent
 TH_LOCAL = PROG_PATH / ".local"
@@ -103,14 +104,14 @@ class LogCsv:
         self.apply_(tmp)
 
 
-_YHQ_HEAD = ["JOBID", "PARTITION", "NAME", "USER", "ST", "TIME", "NODE", "NODELIST(REASON)"]
-_YHI_HEAD = ["CLASS", "ALLOC", "IDLE", "DRAIN", "TOTAL"]
+YHQ_LABEL = ["JOBID", "PARTITION", "NAME", "USER", "ST", "TIME", "NODE", "NODELIST(REASON)"]
+YHI_LABEL = ["CLASS", "ALLOC", "IDLE", "DRAIN", "TOTAL"]
 RUNNING_JOB_LOG = LogCsv(SPath(TH_LOCAL / "running_job.csv"))
 HPC_LOG = LogCsv(SPath(TH_LOCAL / "hpc.csv"))
 TEMP_FILE = SPath(TH_LOCAL / "tmp.txt")
 ALL_JOB_LOG = LogCsv(SPath(TH_LOCAL / "all_job.csv"))
-_ALL_JOB_HEAD = ["JOBID", "ST", "WORKDIR", "NAME", "RESULT"]
-_ERROR_JOB_HEAD = ["JOB_PATH", "ERROR_CODE", "ERROR_NAME"]
+ALL_JOB_LABEL = ["JOBID", "ST", "WORKDIR", "NAME", "RESULT"]
+ERROR_JOB_LABEL = ["JOB_PATH", "ERROR_CODE", "ERROR_NAME"]
 ERROR_JOB_LOG = LogCsv(SPath(TH_LOCAL / "error_job.csv"))
 
 

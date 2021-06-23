@@ -6,7 +6,7 @@ from multiprocessing.pool import Pool
 
 from utils.yhurm import TianHeWorker, TianHeJob
 from utils.spath import SPath
-from utils.log import ALL_JOB_LOG
+from utils.log import ALL_JOB_LOG, ALL_JOB_LABEL
 from calculation.vasp.workflow import WorkflowParser
 from config import WORKFLOW, CONDOR
 
@@ -99,7 +99,7 @@ class Npc:
             jobs.append(["", "PD", root, bash_name, ""])
 
         try:
-            ALL_JOB_LOG.touch(_ALL_JOB_HEAD, jobs)
+            ALL_JOB_LOG.touch(ALL_JOB_LABEL, jobs)
         except (AttributeError, IndexError):
             raise Exception("Job initialization failed !, check structure files or match pattern!")
 

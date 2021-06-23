@@ -37,7 +37,7 @@ class WorkflowParser:
         flow = ''
         task_dir = self.work_root / job_name
         converge_txt = task_dir / "converge.txt"
-        flow += f"echo \'start {job_name} task\'\n"
+        flow += f"echo \'[...]start {job_name} task\'\n"
         flow += f"mkdir {job_name} && cd {job_name} || exit\n"
         node = job_paras.get("node")
         core = job_paras.get("core")
@@ -79,6 +79,7 @@ class WorkflowParser:
         flow += f"    exit\n"
         flow += f"  else\n"
         flow += f"    echo \'[...]errors can be ignored, preparing for the next calculation\'\n"
+        flow += f"  fi\n"
         flow += f"fi\n"
         flow += f"cd ..\n"
 
