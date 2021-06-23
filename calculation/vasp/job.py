@@ -44,7 +44,9 @@ class VaspRunningJob:
                 self._converge.touch()
                 return True
         if not self._ignore.exists():
-            self._ignore.touch()
+            ie = self.job_detail.get("ignore_error")
+            if ie is not None and ie.lower()[0] == 't':
+                self._ignore.touch()
         return False
 
     def is_finish(self):
