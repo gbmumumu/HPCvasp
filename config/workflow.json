@@ -4,7 +4,8 @@
     "core": 24,
     "try_num": 3,
     "ktype": "M",
-    "kval": [0.08]
+    "kval": [0.08],
+    "ignore_error": "True"
   },
   "Fine_relax": {
     "node": 1,

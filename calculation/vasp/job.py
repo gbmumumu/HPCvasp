@@ -26,6 +26,7 @@ class VaspRunningJob:
         self._jtype = self.calc_dir.name
         self._spin = self.calc_dir / "is_spin.txt"
         self._converge = self.calc_dir / "converge.txt"
+        self._ignore = self.calc_dir / "ignore.txt"
 
     def is_spin(self):
         oszicar = self.calc_dir / "OSZICAR"
@@ -42,6 +43,8 @@ class VaspRunningJob:
             if result.converged() or INCAR.from_file(self._incar).get("ISIF") != 3:
                 self._converge.touch()
                 return True
+        if not self._ignore.exists():
+            self._ignore.touch()
         return False
 
     def is_finish(self):
