@@ -294,9 +294,9 @@ class POSCAR:
         u = {
             "LDAU": ".T",
             "LDAUTYPE": 2,
-            "LDAUL": "\s".join([str(i) for i in uo]),
-            "LDAUU": "\s".join([str(j) for j in uvi]),
-            "LDAUJ": "\s".join([str(k) for k in uvj]),
+            "LDAUL": " ".join([str(i) for i in uo]),
+            "LDAUU": " ".join([str(j) for j in uvi]),
+            "LDAUJ": " ".join([str(k) for k in uvj]),
             "LMAXMIX": lm
         }
         return u

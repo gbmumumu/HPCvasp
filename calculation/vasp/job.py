@@ -5,9 +5,9 @@ import re
 from calculation.vasp.outputs import OUTCAR, OSZICAR
 from calculation.vasp.inputs import INCAR, KPOINTS, POSCAR, POTCAR, KPOINTSModes
 from calculation.vasp.workflow import ErrType
+from calculation.npc import ALL_JOB_LOG
 from config import WORKFLOW, CONDOR, INCAR_TEMPLATE
 from utils.spath import SPath
-from utils.yhurm import RUNNING_JOB_LOG
 from utils.tools import smart_fmt
 
 
@@ -67,8 +67,8 @@ class VaspRunningJob:
         return [int(i) for i in slurm_ids]
 
     def get_job_id_from_log(self):
-        if RUNNING_JOB_LOG.contain("WORKDIR", self.calc_dir):
-            return RUNNING_JOB_LOG.get("WORKDIR", self.calc_dir)["JOBID"]
+        if ALL_JOB_LOG.contain("WORKDIR", self.calc_dir):
+            return ALL_JOB_LOG.get("WORKDIR", self.calc_dir)["JOBID"]
         return None
 
     def automatic_check_errors(self):

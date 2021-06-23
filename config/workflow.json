@@ -1,14 +1,14 @@
 {
   "Coarse_relax": {
-    "node": 2,
-    "core": 48,
+    "node": 1,
+    "core": 24,
     "try_num": 3,
     "ktype": "M",
     "kval": [0.08]
   },
   "Fine_relax": {
-    "node": 2,
-    "core": 48,
+    "node": 1,
+    "core": 24,
     "try_num": 2,
     "ktype": "M",
     "kval": [0.04],
@@ -17,8 +17,8 @@
     "parent_files": ["POTCAR", "CONTCAR"]
   },
   "Scf": {
-    "node": 2,
-    "core": 48,
+    "node": 1,
+    "core": 24,
     "try_num": 2,
     "ktype": "M",
     "kval": [ 0.04],
