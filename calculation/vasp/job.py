@@ -5,9 +5,9 @@ import re
 from calculation.vasp.outputs import OUTCAR, OSZICAR
 from calculation.vasp.inputs import INCAR, KPOINTS, POSCAR, POTCAR, KPOINTSModes
 from calculation.vasp.workflow import ErrType
-from calculation.npc import ALL_JOB_LOG
 from config import WORKFLOW, CONDOR, INCAR_TEMPLATE
 from utils.spath import SPath
+from utils.log import ALL_JOB_LOG
 from utils.tools import smart_fmt
 
 

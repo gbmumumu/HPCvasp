@@ -2,22 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import re
-import os.path as osp
 from monty import os
 import pandas
 import pexpect
 
 from utils.spath import SPath
-from utils.tools import retry, get_output, LogCsv, dataframe_from_dict
-
-PROG_PATH = SPath(osp.abspath(__file__)).parent.parent 
-TH_LOCAL = PROG_PATH / ".local"
-TH_LOCAL.mkdir(exist_ok=True)
-_YHQ_HEAD = "JOBID,PARTITION,NAME,USER,ST,TIME,NODE,NODELIST(REASON),WORKDIR".split(',')
-_YHI_HEAD = ["CLASS", "ALLOC", "IDLE", "DRAIN", "TOTAL"]
-RUNNING_JOB_LOG = LogCsv(SPath(TH_LOCAL / "running_job.csv"))
-HPC_LOG = LogCsv(SPath(TH_LOCAL / "hpc.csv"))
-TEMP_FILE = SPath(TH_LOCAL / "tmp.txt")
+from utils.tools import retry, get_output, dataframe_from_dict
+from utils.log import RUNNING_JOB_LOG, HPC_LOG, TEMP_FILE, _YHI_HEAD, _YHQ_HEAD
 
 
 class TianHeTime:

@@ -4,14 +4,11 @@ import threading
 from time import sleep
 from multiprocessing.pool import Pool
 
-from utils.yhurm import TianHeWorker, TianHeJob, TH_LOCAL, RUNNING_JOB_LOG
+from utils.yhurm import TianHeWorker, TianHeJob
 from utils.spath import SPath
-from utils.tools import LogCsv
+from utils.log import ALL_JOB_LOG
 from calculation.vasp.workflow import WorkflowParser
 from config import WORKFLOW, CONDOR
-
-ALL_JOB_LOG = LogCsv(SPath(TH_LOCAL / "all_job.csv"))
-_ALL_JOB_HEAD = ["JOBID", "ST", "WORKDIR", "NAME", "RESULT"]
 
 
 class Producer(threading.Thread):

@@ -5,13 +5,9 @@ import math
 from enum import Enum, unique
 from utils.spath import SPath
 from calculation.vasp.inputs import INCAR, KPOINTS, KPOINTSModes
-from utils.yhurm import TH_LOCAL, TianHeNodes, TianHeJob, RUNNING_JOB_LOG, TianHeWorker
-from utils.tools import LogCsv
-from calculation.npc import ALL_JOB_LOG
+from utils.yhurm import TianHeNodes, TianHeJob, RUNNING_JOB_LOG, TianHeWorker
+from utils.log import ALL_JOB_LOG
 from config import WORKFLOW, CONDOR
-
-_ERROR_JOB_HEAD = ["JOB_PATH", "ERROR_CODE", "ERROR_NAME"]
-ERROR_JOB_LOG = LogCsv(SPath(TH_LOCAL / "error_job.csv"))
 
 
 @unique
