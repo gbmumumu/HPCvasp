@@ -141,7 +141,7 @@ class ErrType:
                   f"need to be resolved manually, check inputs setting!")
             TianHeWorker(partition=CONDOR.get("ALLOW", "PARTITION"),
                          total_allowed_node=CONDOR.getint("ALLOW", "TOTAL_NODE")).flush()
-            if RUNNING_JOB_LOG.is_contain("JOBID", self.job_id):
+            if RUNNING_JOB_LOG.contain("JOBID", self.job_id):
                 job_nodes = TianHeNodes(self.job_id)
                 try:
                     job_nodes.kill_zombie_process_on_nodes(key_word=CONDOR["VASP"]["VASP_EXE"])

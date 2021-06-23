@@ -124,23 +124,23 @@ class TianHeJob:
         _, update_data = self._yhcontrol_parser(output)
         job_id = update_data["JOBID"]
         try:
-            if not RUNNING_JOB_LOG.is_contain("JOBID", job_id):
-                new_data = dataframe_from_dict(update_data)
-                RUNNING_JOB_LOG.insert_one(new_data, index=False)
+            if not RUNNING_JOB_LOG.contain("JOBID", job_id):
+                RUNNING_JOB_LOG.add(update_data)
             else:
-                RUNNING_JOB_LOG.update_many("JOBID", job_id, update_data, index=False)
+                RUNNING_JOB_LOG.alter_many("JOBID", job_id, update_data)
         except:
             return 1, None
         else:
+            RUNNING_JOB_LOG.apply()
             return 0, update_data
 
     def get_time(self, **kwargs):
-        if RUNNING_JOB_LOG.is_contain("JOBID", self.id):
+        if RUNNING_JOB_LOG.contain("JOBID", self.id):
             job = RUNNING_JOB_LOG.get("JOBID", self.id)
             job_cn = job["TIME"]
             return TianHeTime.from_string(job_cn.values.item())
         TianHeWorker(**kwargs).flush()
-        if not RUNNING_JOB_LOG.is_contain("JOBID", self.id):
+        if not RUNNING_JOB_LOG.contain("JOBID", self.id):
             return None
         return self.get_time()
 
@@ -249,7 +249,7 @@ class TianHeWorker:
 
     def yield_time_limit_exceed_jobs(self, time_limit=TianHeTime(3, 0, 0, 0)):
         self.flush()
-        for job_id in RUNNING_JOB_LOG.data["JOBID"]:
+        for job_id in RUNNING_JOB_LOG.csv["JOBID"]:
             if TianHeJob(job_id=job_id).exceeds_time(time_limit):
                 yield job_id
 
@@ -277,12 +277,12 @@ class TianHeNodes:
         return used_nodes
 
     def get_nodes(self, **kwargs):
-        if RUNNING_JOB_LOG.is_contain("JOBID", self.job_id):
+        if RUNNING_JOB_LOG.contain("JOBID", self.job_id):
             job = RUNNING_JOB_LOG.get("JOBID", self.job_id)
             job_cn = job["NODELIST(REASON)"]
             return self._string_parser(job_cn.values.item())
         TianHeWorker(**kwargs).flush()
-        if not RUNNING_JOB_LOG.is_contain("JOBID", self.job_id):
+        if not RUNNING_JOB_LOG.contain("JOBID", self.job_id):
             return None
         return self.get_nodes()
 

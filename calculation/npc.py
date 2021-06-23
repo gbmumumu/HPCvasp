@@ -32,7 +32,7 @@ class Producer(threading.Thread):
             if max_needed_core < val["core"]:
                 max_needed_core = val["core"]
 
-        for index, job in ALL_JOB_LOG.data.iterrows():
+        for index, job in ALL_JOB_LOG.csv.iterrows():
             dft_job = TianHeJob(job_stat=job["RESULT"], job_path=job["WORKDIR"],
                                 partition=CONDOR.get("ALLOW", "PARTITION"),
                                 node=max_needed_node, core=max_needed_core, name=job["NAME"])
@@ -69,7 +69,8 @@ class Submitter(threading.Thread):
                 self.worker.used_node += job.node
             else:
                 info.update({"ST": "SF"})
-            ALL_JOB_LOG.update_many("WORKDIR", job.path, info)
+            ALL_JOB_LOG.alter_many("WORKDIR", job.path, info)
+            ALL_JOB_LOG.apply()
             sleep(self.stime)
 
 

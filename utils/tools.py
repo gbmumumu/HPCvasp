@@ -80,67 +80,81 @@ def multi_run(generator, func, n, *args, **kwargs):
 
 class LogCsv:
     def __init__(self, csv: SPath):
-        self.csv = csv
+        self._path = csv
+        self._csv = pandas.read_csv(csv, sep="\t")
 
-    def __str__(self):
-        return str(self.csv)
+    @property
+    def csv(self):
+        return self._csv
+
+    @csv.setter
+    def csv(self, new_csv):
+        self._csv = new_csv
 
     @property
     def path(self):
-        return self.csv
+        return self._path
 
-    @property
-    def data(self):
-        return self.eval()
+    def __str__(self):
+        return repr(self.csv)
 
-    def eval(self, **kwargs):
-        return pandas.read_csv(self.csv, **kwargs)
+    def apply_(self, df: pandas.DataFrame):
+        return df.to_csv(self._path, sep="\t", na_rep="?", index=False)
 
-    def apply(self, new_data, **kwargs):
-        return new_data.to_csv(self.csv, **kwargs)
+    def apply(self):
+        self.apply_(self.csv)
+
+    def add(self, new_data):
+        tmp = self.csv.copy()
+        tmp = tmp.append(new_data, ignore_index=True)
+        self.csv = tmp
+        return tmp
+
+    def alter(self, lb, old_val, new_val):
+        tmp = self.csv.copy()
+        tmp = self._alter(tmp, lb, old_val, new_val)
+        self.csv = tmp
+        return tmp
+
+    def alter_(self, match_lb, match_val, alter_lb, alter_val):
+        tmp = self.csv.copy()
+        tmp = self.__alter(tmp, match_lb, match_val, alter_lb, alter_val)
+        self.csv = tmp
+        return tmp
 
     @staticmethod
-    def _update(tmp_dat, org_lb, org_val, new_lb=None, new_val=None):
-        if new_lb is None:
-            tmp_dat.loc[tmp_dat[org_lb] == org_val, org_lb] = new_val
-        else:
-            tmp_dat.loc[tmp_dat[org_lb] == org_val, new_lb] = new_val
-        return tmp_dat
+    def _alter(df, mk, mv, nv):
+        df.loc[df[mk] == mv, mk] = nv
+        return df
 
-    def update_one(self, label, value, new_label=None, new_value=None, **kwargs):
-        tmp = self.data.copy()
-        tmp = self._update(tmp, label, value, new_label, new_value)
-        self.apply(tmp, index=False, **kwargs)
+    @staticmethod
+    def __alter(df, mk, mv, ak, av):
+        df.loc[df[mk] == mv, ak] = av
+        return df
 
-    def update_many(self, label, value, new_values: dict, **kwargs):
-        tmp = self.data.copy()
-        for key, val in new_values.items():
-            try:
-                tmp = self._update(tmp, label, value, key, val)
-            except:
-                continue
-        self.apply(tmp, **kwargs)
+    def alter_many(self, match_lb, match_val, values):
+        tmp = self.csv.copy()
+        for k, v in values.items():
+            tmp = self.__alter(tmp, match_lb, match_val, k, v)
+        self.csv = tmp
+        return tmp
 
     def drop_one(self, label, value, **kwargs):
-        tmp = self.data.copy()
+        tmp = self.csv.copy()
         row_list = tmp.loc[tmp[label] == value].index.tolist()
-        tmp.drop(row_list, inplace=True, **kwargs)
-        self.apply(tmp)
+        tmp = tmp.drop(row_list, inplace=True, **kwargs)
+        self.csv = tmp
+        return tmp
 
-    def insert_one(self, data: pandas.DataFrame, **kwargs):
-        tmp = self.data.copy()
-        tmp = tmp.append(data, ignore_index=True)
-        self.apply(tmp, **kwargs)
-
-    def is_contain(self, label, val):
-        tmp = self.data.copy()
+    def contain(self, label, val):
+        tmp = self.csv.copy()
         return bool(tmp.loc[tmp[label] == val].index.tolist())
 
     def get(self, label, val):
-        tmp = self.data.copy()
+        tmp = self.csv.copy()
         return tmp.loc[tmp[label] == val]
 
-    def touch(self, head: list, values: list, **kwargs):
+    def touch(self, head: list, values: list):
         nov = len(values)
         tmp = dataframe_from_dict(
             dict(zip(head, values[0]))
@@ -150,7 +164,7 @@ class LogCsv:
                 dataframe_from_dict(
                     dict(zip(head, values[idx]))), ignore_index=True
             )
-        self.apply(new_data=tmp, **kwargs)
+        self.apply()
 
 
 if __name__ == '__main__':

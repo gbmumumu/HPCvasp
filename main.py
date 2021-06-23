@@ -42,13 +42,13 @@ def match(work_dir, log_name):
 
 @main.command()
 @click.option("--work_dir", help="work directory")
-def gif(work_dir):
+def generate(work_dir):
     return VaspRunningJob(SPath(work_dir)).get_inputs_file()
 
 
 @main.command()
 @click.option("--work_dir", help="work directory")
-def uif(work_dir):
+def update(work_dir):
     return VaspRunningJob(SPath(work_dir)).update_input_files()
 
 
