@@ -244,8 +244,8 @@ class TianHeWorker:
                      ["USER", self.alloc, self._used, None, None]))
         )
         all_yhi = sys_yhi.append(user_yhi, ignore_index=True)
-        user_yhq.to_csv(str(RUNNING_JOB_LOG), index=False)
-        all_yhi.to_csv(str(HPC_LOG), index=False)
+        user_yhq.to_csv(RUNNING_JOB_LOG.path, index=False)
+        all_yhi.to_csv(HPC_LOG.path, index=False)
 
     def yield_time_limit_exceed_jobs(self, time_limit=TianHeTime(3, 0, 0, 0)):
         self.flush()

@@ -4,14 +4,14 @@
     "core": 48,
     "try_num": 3,
     "ktype": "M",
-    "kval": [0.06]
+    "kval": [0.08]
   },
   "Fine_relax": {
     "node": 2,
     "core": 48,
-    "try_num": 5,
+    "try_num": 2,
     "ktype": "M",
-    "kval": [0.04,],
+    "kval": [0.04],
     "incar_paras": [{"POTIM": 0.5}, {"POTIM":  0.2}, {"POTIM":  0.05}],
     "parent": "Coarse_relax",
     "parent_files": ["POTCAR", "CONTCAR"]

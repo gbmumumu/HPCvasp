@@ -31,7 +31,9 @@ class Producer(threading.Thread):
                 max_needed_node = val["node"]
             if max_needed_core < val["core"]:
                 max_needed_core = val["core"]
-
+        if ALL_JOB_LOG.csv is None:
+            raise FileNotFoundError("No structure files found!")
+             
         for index, job in ALL_JOB_LOG.csv.iterrows():
             dft_job = TianHeJob(job_stat=job["RESULT"], job_path=job["WORKDIR"],
                                 partition=CONDOR.get("ALLOW", "PARTITION"),

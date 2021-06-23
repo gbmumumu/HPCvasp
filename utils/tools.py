@@ -81,10 +81,16 @@ def multi_run(generator, func, n, *args, **kwargs):
 class LogCsv:
     def __init__(self, csv: SPath):
         self._path = csv
-        self._csv = pandas.read_csv(csv, sep="\t")
+
+    def __repr__(self):
+        return str(self._path)
 
     @property
     def csv(self):
+        self._csv = None
+        if self._path.exists():
+            self._csv = pandas.read_csv(self._path, sep="\t")
+
         return self._csv
 
     @csv.setter
@@ -164,7 +170,7 @@ class LogCsv:
                 dataframe_from_dict(
                     dict(zip(head, values[idx]))), ignore_index=True
             )
-        self.apply()
+        self.apply_(tmp)
 
 
 if __name__ == '__main__':
