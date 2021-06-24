@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os.path as osp
 import pandas
+import logging
+
 from utils.tools import dataframe_from_dict
 from utils.spath import SPath
-
-PROG_PATH = SPath(osp.abspath(__file__)).parent.parent
-TH_LOCAL = PROG_PATH / ".local"
-TH_LOCAL.mkdir(exist_ok=True)
-
 
 class LogCsv:
     def __init__(self, csv: SPath):
@@ -101,19 +97,8 @@ class LogCsv:
                 dataframe_from_dict(
                     dict(zip(head, values[idx]))), ignore_index=True
             )
+        print(tmp)
         self.apply_(tmp)
-
-
-YHQ_LABEL = ["JOBID", "PARTITION", "NAME", "USER", "ST", "TIME", "NODE", "NODELIST(REASON)"]
-YHI_LABEL = ["CLASS", "ALLOC", "IDLE", "DRAIN", "TOTAL"]
-RUNNING_JOB_LOG = LogCsv(SPath(TH_LOCAL / "running_job.csv"))
-HPC_LOG = LogCsv(SPath(TH_LOCAL / "hpc.csv"))
-TEMP_FILE = SPath(TH_LOCAL / "tmp.txt")
-ALL_JOB_LOG = LogCsv(SPath(TH_LOCAL / "all_job.csv"))
-ALL_JOB_LABEL = ["JOBID", "ST", "WORKDIR", "NAME", "RESULT"]
-ERROR_JOB_LABEL = ["JOB_PATH", "ERROR_CODE", "ERROR_NAME"]
-ERROR_JOB_LOG = LogCsv(SPath(TH_LOCAL / "error_job.csv"))
-
 
 class Notice:
     pass

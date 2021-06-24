@@ -8,7 +8,7 @@ import pexpect
 
 from utils.spath import SPath
 from utils.tools import retry, get_output, dataframe_from_dict
-from utils.log import RUNNING_JOB_LOG, HPC_LOG, TEMP_FILE, YHI_LABEL, YHQ_LABEL
+from utils import RUNNING_JOB_LOG, HPC_LOG, TEMP_FILE, YHI_LABEL, YHQ_LABEL
 
 
 class TianHeTime:

@@ -23,7 +23,7 @@
     "try_num": 2,
     "ktype": "M",
     "kval": [ 0.04],
-    "parent": "Fine_Relax",
+    "parent": "Fine_relax",
     "parent_files": ["POTCAR", "CONTCAR"]
   }
 }

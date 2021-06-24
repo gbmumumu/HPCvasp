@@ -1,2 +1,5 @@
 JOBID	ST	WORKDIR	NAME	RESULT
-?	PD	/WORK/nscc-gz_sgao/matgen_dft/eht3/test/icsd-test-CuO	icsd-test-CuO.sh	?
+17220603	SS	/WORK/nscc-gz_sgao/matgen_dft/eht4/test/icsd_89414-Si8	icsd_89414-Si8.sh	?
+17220605	SS	/WORK/nscc-gz_sgao/matgen_dft/eht4/test/5_icsd_89414-Si8	5_icsd_89414-Si8.sh	?
+17220613	SS	/WORK/nscc-gz_sgao/matgen_dft/eht4/test/4_icsd_89414-Si8	4_icsd_89414-Si8.sh	?
+17220647	SS	/WORK/nscc-gz_sgao/matgen_dft/eht4/test/3_icsd_89414-Si8	3_icsd_89414-Si8.sh	?

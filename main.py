@@ -64,28 +64,27 @@ def flush():
 
 @main.command()
 @click.option("--stime", help="interval time(sec) between submit job", default=0.5)
+@click.option("--ftime", help="interval time(sec) between yhi", default=60)
 @click.option("--qsize", help="queue size, default: 20", default=20)
 @click.option("--process", help="multiprocessing num, default: 4", default=4)
 @click.option("--pat", help="structure files type, default: *.vasp",
               default=f"{CONDOR.get('STRU', 'SUFFIX')}")
 @click.option("--stru_dir", help="structure files directory",
               default=f"{CONDOR.get('STRU', 'PATH')}")
-def run(stru_dir, pat, process=4, qsize=20, stime=0.5):
+def run(stru_dir, pat, process=4, qsize=20, stime=0.5, ftime=60):
     job_queue = Queue(maxsize=qsize)
     control_paras = {
         "partition": CONDOR.get("ALLOW", "PARTITION"),
         "total_allowed_node": CONDOR.getint("ALLOW", "TOTAL_NODE"),
     }
-    worker = TianHeWorker(**control_paras)
-    worker.flush()
-    mana = Npc(SPath(stru_dir), interval_time=stime, )
+
+    mana = Npc(SPath(stru_dir), interval_time=stime)
     mana.init_jobs(pat, process)
     producer = Producer(queue=job_queue)
-    submitter = Submitter(queue=job_queue, worker=worker)
+    submitter = Submitter(job_queue, stime, ftime, **control_paras)
 
     producer.start()
     submitter.start()
-    worker.flush()
 
 
 if __name__ == '__main__':

@@ -80,6 +80,8 @@ class WorkflowParser:
         flow += f"  else\n"
         flow += f"    echo \'[...]errors can be ignored, preparing for the next calculation\'\n"
         flow += f"  fi\n"
+        flow += f"else\n"
+        flow += f"  echo \'[...]{task_dir} job done!\'\n"
         flow += f"fi\n"
         flow += f"cd ..\n"
 

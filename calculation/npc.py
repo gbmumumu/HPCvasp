@@ -6,7 +6,7 @@ from multiprocessing.pool import Pool
 
 from utils.yhurm import TianHeWorker, TianHeJob
 from utils.spath import SPath
-from utils.log import ALL_JOB_LOG, ALL_JOB_LABEL
+from utils import ALL_JOB_LOG, ALL_JOB_LABEL
 from calculation.vasp.workflow import WorkflowParser
 from config import WORKFLOW, CONDOR
 
@@ -42,27 +42,30 @@ class Producer(threading.Thread):
 class Submitter(threading.Thread):
     Finished = True
 
-    def __init__(self, queue, worker: TianHeWorker, stime=0.5, flush_time=60):
+    def __init__(self, queue, stime=0.5, flush_time=60, **kwargs):
         super(Submitter, self).__init__()
         self.queue = queue
-        self.worker = worker
+        self.worker = TianHeWorker(**kwargs)
         self.stime = stime
         self.ftime = flush_time
+        self.worker.flush()
 
     def run(self):
         allow_node = CONDOR.getint("ALLOW", "TOTAL_NODE")
+        print("Start job submission...")
+        print(f"User node limit: {allow_node}")
         while True:
+            print(f"User total used node: {self.worker.used_node}")
+            print(f"System total idle node: {self.worker.idle_node}")
             job = self.queue.get()
             if job is self.Finished:
                 break
-            print("Idle node: ", self.worker.idle_node)
-            print("Used node: ", self.worker.used_node)
             while self.worker.idle_node <= 0 or self.worker.used_node >= allow_node:
+                print("waiting for idle resource...")
                 sleep(self.ftime)
                 self.worker.flush()
-            success, info = job.yhbatch()
-            print(success, info)
-            if success:
+            exit_code, info = job.yhbatch()
+            if exit_code == 0:
                 info.update({"ST": "SS"})
                 self.worker.idle_node -= job.node
                 self.worker.used_node += job.node
@@ -97,6 +100,7 @@ class Npc:
         for job in job_dirs:
             root, bash_name = job.get()
             jobs.append(["", "PD", root, bash_name, ""])
+        print(f"total: {len(jobs)} jobs initialized!")
 
         try:
             ALL_JOB_LOG.touch(ALL_JOB_LABEL, jobs)

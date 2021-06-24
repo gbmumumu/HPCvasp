@@ -6,7 +6,7 @@ from enum import Enum, unique
 from utils.spath import SPath
 from calculation.vasp.inputs import INCAR, KPOINTS, KPOINTSModes
 from utils.yhurm import TianHeNodes, TianHeJob, RUNNING_JOB_LOG, TianHeWorker
-from utils.log import ALL_JOB_LOG
+from utils import ALL_JOB_LOG
 from config import WORKFLOW, CONDOR
 
 
