@@ -6,6 +6,7 @@ import logging
 from utils.tools import dataframe_from_dict
 from utils.spath import SPath
 
+
 class LogCsv:
     def __init__(self, csv: SPath):
         self._path = csv
@@ -97,10 +98,10 @@ class LogCsv:
                 dataframe_from_dict(
                     dict(zip(head, values[idx]))), ignore_index=True
             )
-        print(tmp)
         self.apply_(tmp)
 
-class Notice:
+
+class Notify:
     pass
 
 
