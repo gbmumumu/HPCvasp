@@ -3,7 +3,7 @@
 
 import click
 from queue import Queue
-from calculation.vasp.job import VaspRunningJob
+from calculation.vasp.job import VaspRunningJob, RunningRoot
 from calculation.npc import Submitter, Producer, Npc
 from config import CONDOR
 from utils.yhurm import TianHeJob, TianHeTime, TianHeWorker, TianHeNodes
@@ -38,6 +38,12 @@ def errors(work_dir):
 @click.option("--work_dir", help="work directory")
 def match(work_dir, log_name):
     return VaspRunningJob(SPath(work_dir)).get_errors(log_name)
+
+
+@main.command()
+@click.option("--root", help="root directory")
+def summary(root):
+    return RunningRoot(root).summary()
 
 
 @main.command()

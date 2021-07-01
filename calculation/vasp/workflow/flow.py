@@ -76,12 +76,15 @@ class WorkflowParser:
                 f"       check if it can be ignored\' \n"
         flow += f"  if [ ! -f \"{ignore_txt}\" ];then\n"
         flow += f"    echo \'[...]subsequent calculations are not allowed, job exits...\'\n"
+        flow += f"    echo '{task_dir}\t failed' >> ../stat.log\n"
         flow += f"    exit\n"
         flow += f"  else\n"
         flow += f"    echo \'[...]errors can be ignored, preparing for the next calculation\'\n"
+        flow += f"    echo '{task_dir}\t successed' >> ../stat.log\n"
         flow += f"  fi\n"
         flow += f"else\n"
         flow += f"  echo \'[...]{task_dir} job done!\'\n"
+        flow += f"  echo '{task_dir}\t successed' >> ../stat.log\n"
         flow += f"fi\n"
         flow += f"cd ..\n"
 
@@ -95,6 +98,8 @@ class WorkflowParser:
 
         for step, paras in self.yield_job():
             b += self.parser(step, paras)
+        b += f"python {self._py} summary --root {self.work_root}\n"
+        b += f"[...] TASK FINISHED"
         return b
 
     def write_sh(self):

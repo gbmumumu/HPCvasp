@@ -223,5 +223,38 @@ class VaspRunningJob:
                 return
 
 
+class RunningRoot:
+    def __init__(self, root: SPath):
+        self._root = root
+        self._stat = self._root / "stat.log"
+
+    def _results(self):
+        res = {}
+        for _line in self._stat.readline_text():
+            task, stat = _line.strip('\n').split()
+            if stat.startswith('s'):
+                res[task] = True
+            else:
+                res[task] = False
+        return res
+
+    def _successed(self):
+        if len(self._results()) == len(WORKFLOW) and all(self._results().values()):
+            return True
+        return False
+
+    def summary(self):
+        if self._successed():
+            alter_val = "Successed"
+        else:
+            alter_val = "Failed "
+            for lb, val in self._results().items():
+                if not val:
+                    alter_val += f"{lb},"
+        ALL_JOB_LOG.alter_("WORKDIR", self._root, alter_lb="RESULT", alter_val=alter_val)
+
+        return alter_val
+
+
 if __name__ == '__main__':
     pass
