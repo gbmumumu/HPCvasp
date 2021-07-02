@@ -43,7 +43,7 @@ def match(work_dir, log_name):
 @main.command()
 @click.option("--root", help="root directory")
 def summary(root):
-    return RunningRoot(root).summary()
+    return RunningRoot(SPath(root)).summary()
 
 
 @main.command()

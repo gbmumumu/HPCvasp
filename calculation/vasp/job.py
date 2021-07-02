@@ -247,7 +247,7 @@ class RunningRoot:
         if self._successed():
             alter_val = "Successed"
         else:
-            alter_val = "Failed "
+            alter_val = "Failed"
             for lb, val in self._results().items():
                 if not val:
                     alter_val += f"{lb},"
