@@ -69,6 +69,21 @@ def flush():
 
 
 @main.command()
+@click.option("--sec", help="sec limit", default=0)
+@click.option("--mins", help="mins limit", default=0)
+@click.option("--hour", help="hour limit", default=0)
+@click.option("--day", help="day limit", default=0)
+def limit(day, hour, mins, sec):
+    th_time = TianHeTime(day, hour, mins, sec)
+    control_paras = {
+        "partition": CONDOR.get("ALLOW", "PARTITION"),
+        "total_allowed_node": CONDOR.getint("ALLOW", "TOTAL_NODE"),
+    }
+    for job in TianHeWorker(**control_paras).yield_time_limit_exceed_jobs(th_time):
+        job.yhcancel()
+
+
+@main.command()
 @click.option("--stime", help="interval time(sec) between submit job", default=0.5)
 @click.option("--ftime", help="interval time(sec) between yhi", default=60)
 @click.option("--qsize", help="queue size, default: 20", default=20)

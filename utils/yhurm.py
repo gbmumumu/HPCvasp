@@ -13,6 +13,24 @@ from utils import RUNNING_JOB_LOG, HPC_LOG, TEMP_FILE, YHI_LABEL, YHQ_LABEL
 
 class TianHeTime:
     def __init__(self, days=0, hours=0, mins=0, secs=0):
+        if not isinstance(days, int):
+            days = int(days)
+        if not isinstance(hours, float):
+            hours = float(hours)
+        if not isinstance(mins, float):
+            mins = float(mins)
+        if not isinstance(secs, float):
+            secs = float(secs)
+        if secs > 60:
+            mins += secs // 60
+            secs %= 60
+        if mins > 60:
+            hours += mins
+            mins %= 60
+        if hours > 24:
+            days += hours // 24
+            hours %= 24
+
         self.days = days
         self.hours = hours
         self.mins = mins
@@ -241,8 +259,9 @@ class TianHeWorker:
     def yield_time_limit_exceed_jobs(self, time_limit=TianHeTime(3, 0, 0, 0)):
         self.flush()
         for job_id in RUNNING_JOB_LOG.csv["JOBID"]:
-            if TianHeJob(job_id=job_id).exceeds_time(time_limit):
-                yield job_id
+            job = TianHeJob(job_id=job_id)
+            if job.exceeds_time(time_limit):
+                yield job
 
 
 class TianHeNodes:
