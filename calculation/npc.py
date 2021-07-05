@@ -100,12 +100,12 @@ class Npc:
         for job in job_dirs:
             root, bash_name = job.get()
             jobs.append(["", "PD", root, bash_name, ""])
-        print(f"total: {len(jobs)} jobs initialized!")
-
         try:
             ALL_JOB_LOG.touch(ALL_JOB_LABEL, jobs)
         except (AttributeError, IndexError):
             raise Exception("Job initialization failed !, check structure files or match pattern!")
+        else:
+            print(f"total: {len(jobs)} jobs initialized!")
 
         return True
 
