@@ -11,54 +11,54 @@ from utils.spath import SPath
 
 
 @click.group()
-def main():
+def vasp():
     pass
 
 
-@main.command()
+@vasp.command()
 @click.option("--work_dir", help="work directory")
 def converge(work_dir):
     return VaspRunningJob(SPath(work_dir)).is_converge()
 
 
-@main.command()
+@vasp.command()
 @click.option("--work_dir", help="work directory")
 def spin(work_dir):
     return VaspRunningJob(SPath(work_dir)).is_spin()
 
 
-@main.command()
+@vasp.command()
 @click.option("--work_dir", help="work directory")
 def errors(work_dir):
     return VaspRunningJob(SPath(work_dir)).automatic_check_errors()
 
 
-@main.command()
+@vasp.command()
 @click.option("--log_name", help="log filename")
 @click.option("--work_dir", help="work directory")
 def match(work_dir, log_name):
     return VaspRunningJob(SPath(work_dir)).get_errors(log_name)
 
 
-@main.command()
+@vasp.command()
 @click.option("--root", help="root directory")
 def summary(root):
     return RunningRoot(SPath(root)).summary()
 
 
-@main.command()
+@vasp.command()
 @click.option("--work_dir", help="work directory")
 def generate(work_dir):
     return VaspRunningJob(SPath(work_dir)).get_inputs_file()
 
 
-@main.command()
+@vasp.command()
 @click.option("--work_dir", help="work directory")
 def update(work_dir):
     return VaspRunningJob(SPath(work_dir)).update_input_files()
 
 
-@main.command()
+@vasp.command()
 def flush():
     control_paras = {
         "partition": CONDOR.get("ALLOW", "PARTITION"),
@@ -68,7 +68,7 @@ def flush():
     worker.flush()
 
 
-@main.command()
+@vasp.command()
 @click.option("--sec", help="sec limit", default=0)
 @click.option("--mins", help="mins limit", default=0)
 @click.option("--hour", help="hour limit", default=24)
@@ -83,7 +83,7 @@ def limit(day, hour, mins, sec):
         job.yhcancel()
 
 
-@main.command()
+@vasp.command()
 @click.option("--job_id", help="job id")
 @click.option("--keyword", help="keyword of process name",
               default=CONDOR.get('VASP', 'VASP_EXE'))
@@ -92,7 +92,7 @@ def clear(job_id, keyword):
     thn.kill_zombie_process_on_nodes(key_word=keyword)
 
 
-@main.command()
+@vasp.command()
 @click.option("--stime", help="interval time(sec) between submit job", default=0.5)
 @click.option("--ftime", help="interval time(sec) between yhi", default=60)
 @click.option("--qsize", help="queue size, default: 20", default=20)
@@ -118,4 +118,4 @@ def run(stru_dir, pat, process=4, qsize=20, stime=0.5, ftime=60):
 
 
 if __name__ == '__main__':
-    main()
+    vasp()
