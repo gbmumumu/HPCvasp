@@ -6,7 +6,7 @@ from queue import Queue
 from calculation.vasp.job import VaspRunningJob, RunningRoot
 from calculation.npc import Submitter, Producer, Npc
 from config import CONDOR
-from utils.yhurm import TianHeJob, TianHeTime, TianHeWorker, TianHeNodes
+from utils.yhurm import TianHeTime, TianHeWorker, TianHeNodes
 from utils.spath import SPath
 
 
@@ -71,7 +71,7 @@ def flush():
 @main.command()
 @click.option("--sec", help="sec limit", default=0)
 @click.option("--mins", help="mins limit", default=0)
-@click.option("--hour", help="hour limit", default=0)
+@click.option("--hour", help="hour limit", default=24)
 @click.option("--day", help="day limit", default=0)
 def limit(day, hour, mins, sec):
     th_time = TianHeTime(day, hour, mins, sec)
@@ -81,6 +81,15 @@ def limit(day, hour, mins, sec):
     }
     for job in TianHeWorker(**control_paras).yield_time_limit_exceed_jobs(th_time):
         job.yhcancel()
+
+
+@main.command()
+@click.option("--job_id", help="job id")
+@click.option("--keyword", help="keyword of process name",
+              default=CONDOR.get('VASP', 'VASP_EXE'))
+def clear(job_id, keyword):
+    thn = TianHeNodes(job_id)
+    thn.kill_zombie_process_on_nodes(key_word=keyword)
 
 
 @main.command()
