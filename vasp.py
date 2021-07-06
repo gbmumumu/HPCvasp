@@ -86,7 +86,7 @@ def limit(day, hour, mins, sec):
 @vasp.command()
 @click.option("--job_id", help="job id")
 @click.option("--keyword", help="keyword of process name",
-              default=CONDOR.get('VASP', 'VASP_EXE'))
+              default=CONDOR.get("VASP", "VASP_EXE"))
 def clear(job_id, keyword):
     thn = TianHeNodes(job_id)
     thn.kill_zombie_process_on_nodes(key_word=keyword)

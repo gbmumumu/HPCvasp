@@ -95,11 +95,11 @@ class WorkflowParser:
         b += f"{self.comment}\n"
         b += f"{self.source}\n"
         b += f"{self.module}\n"
-        b += f"[...] TASK START!"
+        b += f"echo \'[...] TASK START!\'\n"
         for step, paras in self.yield_job():
             b += self.parser(step, paras)
         b += f"python {self._py} summary --root {self.work_root}\n"
-        b += f"[...] TASK DONE!"
+        b += f"echo \'[...] TASK DONE!\'"
         return b
 
     def write_sh(self):
