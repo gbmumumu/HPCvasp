@@ -14,6 +14,7 @@ from utils.tools import smart_fmt
 class VaspRunningJob:
     def __init__(self, calc_dir: SPath):
         self.calc_dir = calc_dir.absolute()
+        self._name = self.calc_dir.parent.name
         self._poscar = self.calc_dir / "POSCAR"
         self._contcar = self.calc_dir / "CONTCAR"
         self._incar = self.calc_dir / "INCAR"
@@ -176,9 +177,10 @@ class VaspRunningJob:
         if not self._spin.exists() and self.parent_jtype is not None:
             incar["ISPIN"] = 1
         if not self._poscar.exists() and self.parent_jtype is None:
-            sfx = CONDOR.get("STRU", "SUFFIX")
-            for _poscar in self.calc_dir.parent.walk(pattern=f"{sfx}"):
-                _poscar.copy_to(self.calc_dir / "POSCAR")
+            for tmp in self.calc_dir.parent.walk(pattern=f"*.*"):
+                if self._name in tmp.name and tmp.suffix != ".sh":
+                    tmp.copy_to(self.calc_dir / "POSCAR")
+                    break
         assert self._poscar.exists()
         stru = POSCAR.from_file(self._poscar)
         dft_u = CONDOR.get("METHOD", "DFT_U")
