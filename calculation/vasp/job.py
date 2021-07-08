@@ -29,8 +29,7 @@ class VaspRunningJob:
         self._ignore = self.calc_dir / "ignore.txt"
 
     def is_spin(self):
-        oszicar = self.calc_dir / "OSZICAR"
-        final_mag = OSZICAR(oszicar).final_mag
+        final_mag = OSZICAR(self._oszicar).final_mag
         if final_mag is not None:
             if abs(final_mag) > 0.004:
                 self._spin.write_text(str(final_mag))
@@ -82,11 +81,11 @@ class VaspRunningJob:
 
     def get_errors(self, error_log):
         e = ErrType(job_id=self.job_id, running_dir=self.calc_dir)
-        errors = list(e.get_error_from(self.calc_dir / error_log))
+        errors = set(list(e.get_error_from(self.calc_dir / error_log)))
         if not errors:
-            print(f"error not found from {error_log}")
+            print(f"[...]error not found from {error_log}")
         for item, _ in errors:
-            print(f"error type: {item.value}")
+            print(f"[...]error type: {item.value}")
         return errors
 
     @property

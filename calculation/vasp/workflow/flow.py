@@ -9,7 +9,7 @@ from utils.spath import SPath
 class WorkflowParser:
     def __init__(self, work_root: SPath, comment=None, source=None,
                  modules=None, workflow=None, prog=None, name=None):
-        self.work_root = work_root
+        self.work_root = work_root.absolute()
         if comment is None:
             comment = "#!/bin/bash"
         self.comment = comment
@@ -95,11 +95,11 @@ class WorkflowParser:
         b += f"{self.comment}\n"
         b += f"{self.source}\n"
         b += f"{self.module}\n"
-        b += f"echo \'[...] TASK START!\'\n"
+        b += f"echo \'[...]TASK START!\'\n"
         for step, paras in self.yield_job():
             b += self.parser(step, paras)
         b += f"python {self._py} summary --root {self.work_root}\n"
-        b += f"echo \'[...] TASK DONE!\'"
+        b += f"echo \'[...]TASK DONE!\'"
         return b
 
     def write_sh(self):
