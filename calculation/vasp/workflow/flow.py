@@ -22,9 +22,13 @@ class WorkflowParser:
         self._py = PACKAGE_ROOT / "vasp.py"
         self.name = name
         if source is None:
-            self.source = f"source {CONDOR.get('SOURCE', 'FILES')}"
+            self.source = CONDOR.get('SOURCE', 'FILES')
+            if self.source:
+                self.source = f"source {self.source}"
         if modules is None:
-            self.module = f"module load {CONDOR.get('MODULE', 'MODULES')}"
+            self.module = CONDOR.get('MODULE', 'MODULES')
+            if self.module:
+                self.module = f"module load {self.module}"
 
     def yield_job(self):
         for job_name, job_paras in self.workflow.items():
@@ -62,6 +66,7 @@ class WorkflowParser:
         flow += f"    python {self._py} errors --work_dir {task_dir}\n"
         flow += f"    python {self._py} converge --work_dir {task_dir}\n"
         flow += f"    if [ -f \"{converge_txt}\" ];then\n"
+        flow += f"      python {self._py} spin --work_dir {task_dir}\n"
         flow += f"      break\n"
         flow += f"    fi\n"
         flow += f"  else\n"
@@ -80,10 +85,12 @@ class WorkflowParser:
         flow += f"    exit\n"
         flow += f"  else\n"
         flow += f"    echo \'[...]errors can be ignored, preparing for the next calculation\'\n"
+        flow += f"    python {self._py} spin --work_dir {task_dir}\n"
         flow += f"    echo '{job_name}\t successed' >> ../stat.log\n"
         flow += f"  fi\n"
         flow += f"else\n"
         flow += f"  echo \'[...]{job_name} job done!\'\n"
+        flow += f"  python {self._py} spin --work_dir {task_dir}\n"
         flow += f"  echo '{job_name}\t successed' >> ../stat.log\n"
         flow += f"fi\n"
         flow += f"cd ..\n"

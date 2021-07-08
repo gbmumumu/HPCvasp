@@ -13,7 +13,7 @@ from utils.tools import smart_fmt
 
 class VaspRunningJob:
     def __init__(self, calc_dir: SPath):
-        self.calc_dir = calc_dir
+        self.calc_dir = calc_dir.absolute()
         self._poscar = self.calc_dir / "POSCAR"
         self._contcar = self.calc_dir / "CONTCAR"
         self._incar = self.calc_dir / "INCAR"
@@ -173,7 +173,7 @@ class VaspRunningJob:
         incar_paras = INCAR_TEMPLATE.get(self._jtype)
         assert incar_paras is not None
         incar = INCAR(**incar_paras)
-        if not self._spin.exists():
+        if not self._spin.exists() and self.parent_jtype is not None:
             incar["ISPIN"] = 1
         if not self._poscar.exists() and self.parent_jtype is None:
             sfx = CONDOR.get("STRU", "SUFFIX")
