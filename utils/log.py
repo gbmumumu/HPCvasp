@@ -6,23 +6,24 @@ import logging
 from utils.tools import dataframe_from_dict
 from utils.spath import SPath
 
+
 class LogCsv:
     def __init__(self, csv: SPath):
         self._path = csv
-        self._csv = None
-        if self._path.exists():
-            self._csv = pandas.read_csv(self._path, sep="\t")
+        self._read()
 
     def __repr__(self):
         return str(self._path)
 
+    def _read(self):
+        self._csv = None
+        if self._path.exists():
+            self._csv = pandas.read_csv(self._path, sep="\t")
+
     @property
     def csv(self):
+        self._read()
         return self._csv
-
-    @csv.setter
-    def csv(self, new_csv):
-        self._csv = new_csv
 
     @property
     def path(self):
@@ -99,6 +100,7 @@ class LogCsv:
             )
         print(tmp)
         self.apply_(tmp)
+
 
 class Notice:
     pass
