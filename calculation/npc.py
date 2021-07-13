@@ -54,6 +54,7 @@ class Submitter(threading.Thread):
         allow_node = CONDOR.getint("ALLOW", "TOTAL_NODE")
         print("Start job submission...")
         print(f"User node limit: {allow_node}")
+        total_job, _ = ALL_JOB_LOG.csv.shape
         while True:
             print(f"User total used node: {self.worker.used_node}")
             print(f"System total idle node: {self.worker.idle_node}")
@@ -61,7 +62,7 @@ class Submitter(threading.Thread):
             if job is self.Finished:
                 break
             while self.worker.idle_node <= 0 or self.worker.used_node >= allow_node:
-                print("waiting for idle resource...")
+                print(f"waiting for idle resource...remain: {total_job}")
                 sleep(self.ftime)
                 self.worker.flush()
             exit_code, info = job.yhbatch()
@@ -69,6 +70,8 @@ class Submitter(threading.Thread):
                 info.update({"ST": "SS"})
                 self.worker.idle_node -= job.node
                 self.worker.used_node += job.node
+                total_job -= 1
+                print(f"remain job num: {total_job}")
             else:
                 info.update({"ST": "SF"})
             ALL_JOB_LOG.alter_many("WORKDIR", job.path, info)
