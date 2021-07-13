@@ -67,7 +67,7 @@ class ErrType:
 
     def __init__(self, job_id, running_dir: SPath):
         self.job_id = job_id
-        self.running_root = running_dir
+        self.running_root = running_dir.absolute()
         self.yh = self.running_root / "yh.log"
         self._outcar = self.running_root / "OUTCAR"
         self._incar = self.running_root / "INCAR"

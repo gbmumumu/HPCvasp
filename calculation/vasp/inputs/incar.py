@@ -96,7 +96,6 @@ class INCAR:
     def __str__(self):
         return repr(self.paras)
 
-
     def get(self, item):
         return self.paras.get(item)
 

@@ -252,7 +252,8 @@ class RunningRoot:
             for lb, val in self._results().items():
                 if not val:
                     alter_val += f"{lb},"
-        ALL_JOB_LOG.alter_("WORKDIR", self._root, alter_lb="RESULT", alter_val=alter_val)
+        tmp = ALL_JOB_LOG.alter_("WORKDIR", self._root, alter_lb="RESULT", alter_val=alter_val)
+        ALL_JOB_LOG.apply_(tmp)
 
         return alter_val
 

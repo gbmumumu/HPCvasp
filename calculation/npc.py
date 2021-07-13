@@ -71,8 +71,8 @@ class Submitter(threading.Thread):
                 self.worker.used_node += job.node
             else:
                 info.update({"ST": "SF"})
-            ALL_JOB_LOG.alter_many("WORKDIR", job.path, info)
-            ALL_JOB_LOG.apply()
+            tmp = ALL_JOB_LOG.alter_many("WORKDIR", job.path, info)
+            ALL_JOB_LOG.apply_(tmp)
             sleep(self.stime)
 
 
