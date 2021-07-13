@@ -226,7 +226,7 @@ class VaspRunningJob:
 
 class RunningRoot:
     def __init__(self, root: SPath):
-        self._root = root
+        self._root = root.absolute()
         self._stat = self._root / "stat.log"
 
     def _results(self):

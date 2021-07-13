@@ -102,7 +102,6 @@ class LogCsv:
                 dataframe_from_dict(
                     dict(zip(head, values[idx]))), ignore_index=True
             )
-        print(tmp)
         self.apply_(tmp)
 
 
