@@ -238,7 +238,7 @@ class ErrType:
                 for err_type, err_code in xl:
                     self.reaction(err_type, err_code)
         if not el:
-            print("error not found, update POSCAR if CONTCAR is not empty...")
+            print("[...]error not found, update POSCAR if CONTCAR is not empty...")
             self.contcar2poscar()
 
     def get_error_from(self, log):

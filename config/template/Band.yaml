@@ -1,7 +1,6 @@
 SYSTEM: matgen-band
 ISTART: 1
-ISYM: 0
-SYMPREC: 1E-04
+ISYM: 2
 NWRITE: 2
 LPETIM: .F.
 ISPIN: 2

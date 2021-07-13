@@ -1,2 +1,16 @@
 JOBID	PARTITION	NAME	USER	ST	TIME	NODES	NODELIST(REASON)	WORKDIR
-17220613	free	4_icsd_8	nscc-gz_sgao	R	0:58	1	cn9616	?
+17271965	free	icsd_181	nscc-gz_sgao	R	8:41	1	cn10253	?
+17271966	free	icsd_614	nscc-gz_sgao	R	8:41	1	cn10259	?
+17271967	free	icsd_637	nscc-gz_sgao	R	8:41	1	cn10333	?
+17271968	free	icsd_736	nscc-gz_sgao	R	8:41	1	cn10372	?
+17271969	free	icsd_290	nscc-gz_sgao	R	8:41	1	cn10410	?
+17271970	free	icsd_245	nscc-gz_sgao	R	8:41	1	cn10425	?
+17271971	free	icsd_150	nscc-gz_sgao	R	8:41	1	cn10539	?
+17271972	free	icsd_610	nscc-gz_sgao	R	8:41	1	cn10596	?
+17271973	free	icsd_619	nscc-gz_sgao	R	8:41	1	cn10625	?
+17271974	free	icsd_627	nscc-gz_sgao	R	8:41	1	cn10048	?
+17271975	free	icsd_103	nscc-gz_sgao	R	8:41	1	cn10049	?
+17271976	free	icsd_150	nscc-gz_sgao	R	8:41	1	cn10632	?
+17271977	free	icsd_636	nscc-gz_sgao	R	8:41	1	cn10633	?
+17271964	free	icsd_595	nscc-gz_sgao	R	9:11	1	cn10227	?
+17271883	free	icsd_894	nscc-gz_sgao	R	26:41	1	cn9837	?
