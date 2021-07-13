@@ -109,9 +109,6 @@ class LogCsv:
 class Notice:
     pass
 
-class Notice:
-    pass
-
 
 if __name__ == '__main__':
     pass
