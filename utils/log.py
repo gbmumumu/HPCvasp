@@ -25,6 +25,10 @@ class LogCsv:
         self._read()
         return self._csv
 
+    @csv.setter
+    def csv(self, new_csv):
+        self._csv = new_csv
+
     @property
     def path(self):
         return self._path
@@ -101,6 +105,9 @@ class LogCsv:
         print(tmp)
         self.apply_(tmp)
 
+
+class Notice:
+    pass
 
 class Notice:
     pass
